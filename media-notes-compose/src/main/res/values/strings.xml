@@ -1,0 +1,5 @@
+<resources>
+    <string name="media_notes_toolbar__text_field__hint">Введите текст...</string>
+    <string name="media_notes_toolbar__voice_recording__cancel__title">Влево — отмена</string>
+    <string name="media_notes_toolbar__voice_recording__tooltip__title">Удерживайте для записи,\nотпустите для отправки</string>
+</resources>

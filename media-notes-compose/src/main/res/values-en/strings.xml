@@ -1,0 +1,5 @@
+<resources>
+    <string name="media_notes_toolbar__text_field__hint">Enter text...</string>
+    <string name="media_notes_toolbar__voice_recording__cancel__title">Left - cancel</string>
+    <string name="media_notes_toolbar__voice_recording__tooltip__title">Hold to record,\nrelease to send</string>
+</resources>

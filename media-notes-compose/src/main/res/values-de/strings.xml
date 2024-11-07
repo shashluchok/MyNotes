@@ -1,0 +1,5 @@
+<resources>
+    <string name="media_notes_toolbar__text_field__hint">Text eingeben...</string>
+    <string name="media_notes_toolbar__voice_recording__cancel__title">Links - abbrechen</string>
+    <string name="media_notes_toolbar__voice_recording__tooltip__title">Hold to record,\nrelease to send</string>
+</resources>
