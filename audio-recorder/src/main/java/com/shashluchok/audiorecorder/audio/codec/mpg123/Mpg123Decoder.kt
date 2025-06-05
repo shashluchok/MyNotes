@@ -6,8 +6,6 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.IOException
-import java.io.InputStream
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -36,8 +34,8 @@ class Mpg123Decoder : Mpg123(), AudioDecoder {
     }
 
     override suspend fun calculateVolumeLevelsAndDuration(
-        fileDataSource: FileDataSource,
-    ): Pair<ImmutableList<Float>, Duration>  {
+        fileDataSource: FileDataSource
+    ): Pair<ImmutableList<Float>, Duration> {
         return withContext(Dispatchers.IO) {
             val duration = getDuration(fileDataSource.file.path).toDuration(DurationUnit.SECONDS)
             val peaks = getVolumePeaks(fileDataSource.file.path, 100).toList().toImmutableList()
@@ -129,5 +127,4 @@ class Mpg123Decoder : Mpg123(), AudioDecoder {
         }
         return getFramesCount(mpgPtr).toLong()
     }*/
-
 }

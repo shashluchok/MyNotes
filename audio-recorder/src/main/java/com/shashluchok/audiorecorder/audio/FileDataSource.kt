@@ -13,5 +13,4 @@ class FileDataSource(
     override fun openOutputStream(append: Boolean) = FileOutputStream(file, append)
 
     override val size = if (file.exists()) file.length() else 0
-
 }

@@ -17,6 +17,4 @@ open class Mpg123 {
     external fun getVolumePeaks(filePath: String, numPeaks: Int): FloatArray
 
     external fun close(mpgPtr: Long)
-
-
 }
