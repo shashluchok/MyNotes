@@ -13,30 +13,12 @@ import kotlinx.coroutines.launch
 
 class AudioPlayerImpl(
     scope: CoroutineScope
-) : AudioPlayer, OnCompletionListener, OnPreparedListener {
-
-
-    override val state: MutableStateFlow<PlayerState> = MutableStateFlow<PlayerState>(
-        PlayerState.RELEASED
-    )
-
-    override val playInfoState = MutableStateFlow<AudioPlayer.PlayInfo?>(null)
+) : AudioPlayer, OnCompletionListener, OnPreparedListener, MediaPlayer.OnErrorListener {
 
     private val mediaPlayer = MediaPlayer()
 
-    private val currentProgress: Float
-        get() {
-            return if (state.value != PlayerState.RELEASED) {
-                mediaPlayer.currentPosition / mediaPlayer.duration.toFloat()
-            } else 0f
-        }
-
-    private val remainingDuration: Int
-        get() {
-            return if (state.value != PlayerState.RELEASED) {
-                mediaPlayer.duration - mediaPlayer.currentPosition
-            } else 0
-        }
+    override val state = MutableStateFlow(PlayerState.RELEASED)
+    override val playInfoState: MutableStateFlow<AudioPlayer.PlayInfo?> = MutableStateFlow(null)
 
     init {
         scope.launch(Dispatchers.Default) {
@@ -56,24 +38,25 @@ class AudioPlayerImpl(
     override fun load(dataSource: FileDataSource) {
         mediaPlayer.setOnCompletionListener(this)
         mediaPlayer.setOnPreparedListener(this)
-
+        mediaPlayer.setOnErrorListener(this)
         try {
             mediaPlayer.reset()
             state.value = PlayerState.RELEASED
             mediaPlayer.setDataSource(dataSource.openInputStream().fd)
             mediaPlayer.prepareAsync()
         } catch (e: Exception) {
-            //...
+            // ...
         }
     }
 
     override fun play() {
         if (state.value != PlayerState.RELEASED && !mediaPlayer.isPlaying) {
             mediaPlayer.start()
-            state.update { PlayerState.PLAYING }
+            state.update {
+                PlayerState.PLAYING
+            }
         }
     }
-
 
     override fun pause() {
         if (state.value != PlayerState.RELEASED && mediaPlayer.isPlaying) {
@@ -113,7 +96,29 @@ class AudioPlayerImpl(
 
     override fun onCompletion(mp: MediaPlayer) {
         mediaPlayer.stop()
-        state.update { PlayerState.COMPLETED }
+        state.value = PlayerState.COMPLETED
     }
 
+    override fun onError(mp: MediaPlayer, what: Int, extra: Int): Boolean {
+        // ...
+        return true
+    }
+
+    private val currentProgress: Float
+        get() {
+            return if (state.value != PlayerState.RELEASED) {
+                mediaPlayer.currentPosition / mediaPlayer.duration.toFloat()
+            } else {
+                0f
+            }
+        }
+
+    private val remainingDuration: Int
+        get() {
+            return if (state.value != PlayerState.RELEASED) {
+                mediaPlayer.duration - mediaPlayer.currentPosition
+            } else {
+                0
+            }
+        }
 }

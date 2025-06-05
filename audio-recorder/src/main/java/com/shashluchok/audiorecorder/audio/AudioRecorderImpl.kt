@@ -13,23 +13,33 @@ import java.io.OutputStream
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.math.abs
 
-
-class AudioRecorderImpl : AudioRecorder {
+class AudioRecorderImpl(
+    private var sampleRate: Int = 44000
+) : AudioRecorder {
 
     private val audioMode = AudioFormat.CHANNEL_IN_MONO
     private val audioFormat = AudioFormat.ENCODING_PCM_16BIT
-    private val encoder: AudioEncoder = LameEncoder(SAMPLE_RATE)
+
+    private val encoder: AudioEncoder = LameEncoder(sampleRate)
 
     private val minBufferSize = AudioRecord.getMinBufferSize(
-        SAMPLE_RATE, audioMode, audioFormat
+        sampleRate,
+        audioMode,
+        audioFormat
     )
 
-    private val isProcessing = AtomicBoolean(false)
+    private var isRecording: Boolean = false
+
+    private var dataSource: FileDataSource? = null
+
+    private var isError = false
+
+    private var isProcessing = AtomicBoolean(false)
 
     @SuppressLint("MissingPermission")
-    private var audioRecord = AudioRecord(
+    var audioRecord = AudioRecord(
         MediaRecorder.AudioSource.MIC,
-        SAMPLE_RATE,
+        sampleRate,
         audioMode,
         audioFormat,
         minBufferSize * 2
@@ -40,13 +50,17 @@ class AudioRecorderImpl : AudioRecorder {
         onStart: () -> Unit,
         onNewVolume: (Float) -> Unit
     ) {
+        this.dataSource = dataSource
         withContext(Dispatchers.IO) {
-            initAudioRecorder()
-            audioRecord.startRecording()
-            onStart()
-
-            dataSource.openOutputStream(append = true).use {
-                pcmToFile(it, onNewVolume).not()
+            if (!isRecording) {
+                isError = false
+                isRecording = true
+                initAudioRecorder()
+                audioRecord.startRecording()
+                onStart()
+                dataSource.openOutputStream(append = true).use {
+                    pcmToFile(it, onNewVolume).not()
+                }
             }
         }
     }
@@ -56,12 +70,14 @@ class AudioRecorderImpl : AudioRecorder {
             audioRecord.stop()
         }
         audioRecord.release()
+        isRecording = false
         isProcessing.set(false)
     }
 
     override fun destroy() {
         audioRecord.release()
         isProcessing.set(false)
+        isRecording = false
         encoder.close()
     }
 
@@ -117,10 +133,9 @@ class AudioRecorderImpl : AudioRecorder {
     @SuppressLint("MissingPermission")
     private fun initAudioRecorder() {
         if (audioRecord.state == AudioRecord.STATE_UNINITIALIZED) {
-
             val audioRecorder = AudioRecord(
                 MediaRecorder.AudioSource.MIC,
-                SAMPLE_RATE,
+                sampleRate,
                 audioMode,
                 audioFormat,
                 minBufferSize * 2
@@ -133,7 +148,6 @@ class AudioRecorderImpl : AudioRecorder {
     }
 
     companion object {
-        private const val SAMPLE_RATE= 44000
         private const val BUFFER_SIZE = 8_192
         private const val AMPLITUDE_THRESHOLD = 30000.0f
     }

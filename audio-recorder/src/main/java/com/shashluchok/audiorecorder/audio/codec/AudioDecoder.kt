@@ -2,7 +2,6 @@ package com.shashluchok.audiorecorder.audio.codec
 
 import com.shashluchok.audiorecorder.audio.FileDataSource
 import kotlinx.collections.immutable.ImmutableList
-import java.io.InputStream
 import kotlin.time.Duration
 
 interface AudioDecoder {
@@ -16,6 +15,6 @@ interface AudioDecoder {
     fun close()
 
     suspend fun calculateVolumeLevelsAndDuration(
-        fileDataSource: FileDataSource,
+        fileDataSource: FileDataSource
     ): Pair<ImmutableList<Float>, Duration>
 }

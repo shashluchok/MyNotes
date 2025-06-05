@@ -11,5 +11,4 @@ open class Lame {
     external fun flush(lamePtr: Long, outputData: ByteArray?): Int
     external fun closeLame(lamePtr: Long)
     external fun getVersion(): String
-
 }

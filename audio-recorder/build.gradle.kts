@@ -17,12 +17,10 @@ android {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
 
-
         ndk {
             //noinspection ChromeOsAbiSupport
             abiFilters += abi.split(',')
         }
-
     }
     externalNativeBuild {
         cmake {

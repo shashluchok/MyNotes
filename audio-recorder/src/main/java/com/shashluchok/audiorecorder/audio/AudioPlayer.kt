@@ -1,6 +1,6 @@
 package com.shashluchok.audiorecorder.audio
 
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 interface AudioPlayer {
 
@@ -14,8 +14,8 @@ interface AudioPlayer {
         SEEKING, PLAYING, STOPPED,
     }
 
-    val state: MutableStateFlow<PlayerState>
-    val playInfoState: MutableStateFlow<PlayInfo?>
+    val state: StateFlow<PlayerState>
+    val playInfoState: StateFlow<PlayInfo?>
 
     fun play()
     fun pause()

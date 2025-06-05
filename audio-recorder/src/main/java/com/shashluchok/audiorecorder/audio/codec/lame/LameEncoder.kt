@@ -22,7 +22,9 @@ class LameEncoder(
     override fun flush(): Int {
         return if (lamePtr != 0L) {
             flush(lamePtr, lastBuffer)
-        } else -1
+        } else {
+            -1
+        }
     }
 
     override fun close() {
