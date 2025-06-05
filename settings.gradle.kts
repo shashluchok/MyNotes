@@ -32,3 +32,4 @@ dependencyResolutionManagement {
 rootProject.name = "MediaNotes"
 include(":sampleApp")
 include(":media-notes-compose")
+include(":audio-recorder")
