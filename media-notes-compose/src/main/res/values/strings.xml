@@ -1,4 +1,5 @@
 <resources>
+    <string name="app_name" translatable="false">MediaNotes</string>
     <string name="screen_media_notes__toolbar__hint">Введите текст...</string>
 
     <string name="screen_media_notes__toolbar__cancel_recording__title">Влево — отмена</string>
@@ -14,4 +15,5 @@
 
     <string name="screen_image_editor__snackbar__save_error__title">Ошибка при сохранении</string>
 
+    <string name="screen_camera_capture__snackbar__error__title">Ошибка при сохранении</string>
 </resources>
