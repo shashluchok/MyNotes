@@ -52,7 +52,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.IntOffset
@@ -259,6 +261,7 @@ private fun MediaToolbar(
                 ) {
                     val voiceRecordingEnabled =
                         recordAudioPermission.status == PermissionStatus.Granted
+                    val haptic = LocalHapticFeedback.current
 
                     VoiceToolbarIcon(
                         modifier = Modifier
@@ -275,7 +278,10 @@ private fun MediaToolbar(
                                         voiceIconOffsetX = offset
                                     }
                                 },
-                                onDragStart = onVoiceLongClick,
+                                onDragStart = {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onVoiceLongClick()
+                                },
                                 onDragEnd = onVoiceDragEnd,
                                 onDragCancel = onVoiceDragCancel,
                                 maxDragOffset = maxVoiceIconOffset.toPx(),
