@@ -63,7 +63,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.shashluchok.medianotes.R
-import com.shashluchok.medianotes.presentation.components.dialog.SaveAnimationDialog
+import com.shashluchok.medianotes.presentation.components.dialog.LoadingAnimationDialog
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButton
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarHost
@@ -136,10 +136,6 @@ private fun SketchScreen(
     val graphicsLayer = rememberGraphicsLayer()
 
     val context = LocalContext.current
-
-    if (isLoading) {
-        SaveAnimationDialog()
-    }
 
     Scaffold(
         modifier = modifier,
@@ -227,6 +223,9 @@ private fun SketchScreen(
                 }
             )
         }
+    }
+    if (isLoading) {
+        LoadingAnimationDialog()
     }
 }
 

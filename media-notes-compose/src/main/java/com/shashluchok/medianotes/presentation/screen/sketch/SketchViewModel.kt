@@ -289,6 +289,6 @@ internal class SketchViewModel(
     companion object {
         private val PEN_THICKNESS_RANGE = 2.dp..8.dp
         private val ERASER_THICKNESS_RANGE = 10.dp..40.dp
-        private val MIN_SAVE_SKETCH_DURATION = 2.seconds
+        private val MIN_SAVE_SKETCH_DURATION = 1.seconds
     }
 }
