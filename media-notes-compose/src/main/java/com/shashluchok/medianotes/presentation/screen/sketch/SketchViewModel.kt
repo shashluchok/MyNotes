@@ -17,6 +17,7 @@ import com.shashluchok.medianotes.domain.notes.create.CreateMediaNoteInteractor
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
 import com.shashluchok.medianotes.presentation.screen.AbsViewModel
 import com.shashluchok.medianotes.presentation.utils.middle
+import com.shashluchok.medianotes.presentation.utils.withWhiteBackground
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
@@ -234,7 +235,7 @@ internal class SketchViewModel(
             val saveOperation = measureTimedValue {
                 saveBitmapToFile.invoke(
                     context = context,
-                    bitmap = bitmap ?: return@measureTimedValue null
+                    bitmap = bitmap?.withWhiteBackground() ?: return@measureTimedValue null
                 ).getOrNull()?.let { file ->
                     createMediaNote(
                         MediaNote.Sketch(
