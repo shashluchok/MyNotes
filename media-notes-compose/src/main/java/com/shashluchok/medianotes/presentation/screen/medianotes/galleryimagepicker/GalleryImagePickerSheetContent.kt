@@ -287,7 +287,6 @@ private fun ImagesLazyList(
                                         ContentScale.FillHeight
                                     }
                                 ),
-
                                 animatedVisibilityScope = LocalNavAnimatedVisibilityScope.current
                             )
                             .fillMaxSize()
