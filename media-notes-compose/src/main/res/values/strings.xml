@@ -8,6 +8,10 @@
     <string name="screen_media_notes__snackbar__go_to_settings__title">Перейдите в настройки и выдайте разрешения, пожалуйста</string>
     <string name="screen_media_notes__snackbar__go_to_settings__action">Настройки</string>
 
+    <string name="screen_media_notes__empty_state__title">Заметок еще нет</string>
+    <string name="screen_media_notes__empty_state__subtitle">Создайте свою первую заметку, используя панель снизу.</string>
+
+
     <string name="screen_sketch__topbar__title">Скетч</string>
     <string name="screen_sketch__snackbar__save_error__title">Ошибка при сохранении</string>
 
