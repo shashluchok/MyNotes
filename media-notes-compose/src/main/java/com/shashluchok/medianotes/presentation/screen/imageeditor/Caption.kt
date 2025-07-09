@@ -7,13 +7,10 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +34,7 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.shashluchok.medianotes.R
+import com.shashluchok.medianotes.presentation.components.keyboard.rememberKeyboardTransitionState
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButton
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButtonDefaults
 
@@ -55,7 +53,6 @@ private val captionBackgroundColor = Color.Black.copy(alpha = 0.5f)
 
 private val captionTextFieldPadding = PaddingValues(vertical = 12.dp)
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun Caption(
     onCaptionChange: (String) -> Unit,
@@ -70,12 +67,14 @@ internal fun Caption(
         val keyboardController = LocalSoftwareKeyboardController.current
         val focusManager = LocalFocusManager.current
 
-        val isImeVisible = WindowInsets.isImeVisible
+        val keyboardTransitionState = rememberKeyboardTransitionState()
 
-        val updateTransition = updateTransition(isImeVisible)
+        val updateTransition = updateTransition(keyboardTransitionState.isOpening)
 
-        LaunchedEffect(isImeVisible) {
-            if (isImeVisible.not()) focusManager.clearFocus(force = true)
+        LaunchedEffect(keyboardTransitionState.isOpening) {
+            if (keyboardTransitionState.isOpening.not()) {
+                focusManager.clearFocus(force = true)
+            }
         }
 
         val padding by updateTransition.animateDp(
@@ -92,7 +91,6 @@ internal fun Caption(
 
         Row(
             modifier = Modifier
-                .animateContentSize()
                 .imePadding()
                 .heightIn(min = captionMinHeight)
                 .padding(padding)
@@ -125,7 +123,7 @@ internal fun Caption(
             )
 
             AnimatedVisibility(
-                visible = isImeVisible
+                visible = keyboardTransitionState.isOpening
             ) {
                 MediaIconButton(
                     painter = rememberVectorPainter(Icons.Rounded.Check),
