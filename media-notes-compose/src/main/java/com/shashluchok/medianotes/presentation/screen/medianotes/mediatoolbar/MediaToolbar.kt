@@ -81,7 +81,7 @@ private val maxSwipeToCancelOffset = 30.dp
 private const val swipeToCancelDragOffsetMultiplier = 0.25f
 private val swipeToCancelAnimationBreakpoint = 10.dp
 
-private val textFieldVerticalPadding = 12.dp
+private val textFieldVerticalPadding = 10.dp
 
 private val voiceRecordingLayoutHorizontalPadding = 12.dp
 
@@ -195,7 +195,8 @@ private fun MediaToolbar(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = toolbarHorizontalPadding)
-                .background(MaterialTheme.colorScheme.surface)
+                .background(MaterialTheme.colorScheme.surface),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
                 modifier = Modifier.weight(1f)
