@@ -1,6 +1,7 @@
 package com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
@@ -8,17 +9,21 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -40,6 +45,8 @@ private val scrollbarPadding = PaddingValues(end = 8.dp)
 
 private val emptyStatePadding = PaddingValues(horizontal = 16.dp)
 
+private const val listScrollOnImeOpenlAnimationDuration = 600
+
 @Composable
 internal fun MediaNotesList(
     listState: LazyListState,
@@ -54,6 +61,17 @@ internal fun MediaNotesList(
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
+    val imeHeight = WindowInsets.ime.getBottom(LocalDensity.current)
+
+    LaunchedEffect(imeHeight) {
+        if (imeHeight >= 0) {
+            listState.animateScrollBy(
+                value = imeHeight.toFloat(),
+                animationSpec = tween(listScrollOnImeOpenlAnimationDuration)
+            )
+        }
+    }
+
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
@@ -67,16 +85,21 @@ internal fun MediaNotesList(
         }
     }
 
-    MediaNotesList(
+    AnimatedWavesContainer(
         modifier = modifier,
-        mediaNotes = notes,
-        selectedNotes = selectedNotes,
-        onSelect = onSelect,
-        lazyListState = listState,
-        onOpenImage = onOpenImage,
-        playVoiceInfo = state.playingVoiceInfo,
-        onAction = viewModel::onAction
-    )
+        wavesVisible = notes.isEmpty()
+    ) {
+        MediaNotesList(
+            modifier = Modifier.fillMaxSize(),
+            mediaNotes = notes,
+            selectedNotes = selectedNotes,
+            onSelect = onSelect,
+            lazyListState = listState,
+            onOpenImage = onOpenImage,
+            playVoiceInfo = state.playingVoiceInfo,
+            onAction = viewModel::onAction
+        )
+    }
 }
 
 @Composable

@@ -19,7 +19,7 @@ import com.shashluchok.medianotes.presentation.components.LocalNavAnimatedVisibi
 import com.shashluchok.medianotes.presentation.components.LocalSharedTransitionScope
 import com.shashluchok.medianotes.presentation.screen.cameracapture.CameraCaptureScreen
 import com.shashluchok.medianotes.presentation.screen.imageeditor.ImageEditorScreen
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaListScreen
+import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNotesScreen
 import com.shashluchok.medianotes.presentation.screen.sketch.SketchScreen
 
 internal enum class MediaNoteRoute {
@@ -50,7 +50,7 @@ internal fun MediaNotesScreen(
                     CompositionLocalProvider(
                         LocalNavAnimatedVisibilityScope provides this
                     ) {
-                        MediaListScreen(
+                        MediaNotesScreen(
                             onOpenCamera = {
                                 navController.navigate(MediaNoteRoute.Camera.name)
                             },
