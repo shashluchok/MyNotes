@@ -49,7 +49,7 @@ class MediaNotesRepositoryImpl(
             DbMediaNote.Type.VOICE -> path?.let {
                 MediaNote.Voice(
                     id = id,
-                    updatedAt = updatedAt,
+                    createdAt = createdAt,
                     path = path
                 )
             }
@@ -57,7 +57,7 @@ class MediaNotesRepositoryImpl(
             DbMediaNote.Type.IMAGE -> path?.let {
                 MediaNote.Image(
                     id = id,
-                    updatedAt = updatedAt,
+                    createdAt = createdAt,
                     path = path,
                     text = text ?: ""
                 )
@@ -66,14 +66,14 @@ class MediaNotesRepositoryImpl(
             DbMediaNote.Type.SKETCH -> path?.let {
                 MediaNote.Sketch(
                     id = id,
-                    updatedAt = updatedAt,
+                    createdAt = createdAt,
                     path = path
                 )
             }
 
             DbMediaNote.Type.TEXT -> MediaNote.Text(
                 id = id,
-                updatedAt = updatedAt,
+                createdAt = createdAt,
                 value = text ?: ""
             )
         }
@@ -83,7 +83,7 @@ class MediaNotesRepositoryImpl(
         return when (this) {
             is MediaNote.Image -> DbMediaNote(
                 id = id,
-                updatedAt = updatedAt,
+                createdAt = createdAt,
                 path = path,
                 type = DbMediaNote.Type.IMAGE,
                 text = text
@@ -91,21 +91,21 @@ class MediaNotesRepositoryImpl(
 
             is MediaNote.Sketch -> DbMediaNote(
                 id = id,
-                updatedAt = updatedAt,
+                createdAt = createdAt,
                 path = path,
                 type = DbMediaNote.Type.SKETCH
             )
 
             is MediaNote.Text -> DbMediaNote(
                 id = id,
-                updatedAt = updatedAt,
+                createdAt = createdAt,
                 text = value,
                 type = DbMediaNote.Type.TEXT
             )
 
             is MediaNote.Voice -> DbMediaNote(
                 id = id,
-                updatedAt = updatedAt,
+                createdAt = createdAt,
                 path = path,
                 type = DbMediaNote.Type.VOICE
             )

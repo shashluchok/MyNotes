@@ -7,7 +7,7 @@ import kotlinx.datetime.Instant
 @Entity(tableName = "mediaNotes")
 data class DbMediaNote(
     @PrimaryKey val id: String,
-    val updatedAt: Instant,
+    val createdAt: Instant,
     val path: String? = null,
     val text: String? = null,
     val type: Type

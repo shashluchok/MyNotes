@@ -212,7 +212,7 @@ private fun MediaNotesList(
                                     }
                                 )
                             },
-                        updatedTime = mediaNote.updatedAt,
+                        updatedTime = mediaNote.createdAt,
                         note = mediaNote,
                         isSelecting = selectedNotes.isNotEmpty(),
                         onSelect = onSelect,
