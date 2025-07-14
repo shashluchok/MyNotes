@@ -26,13 +26,11 @@ import androidx.compose.material.icons.automirrored.rounded.Undo
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -67,11 +65,14 @@ import com.shashluchok.medianotes.presentation.components.dialog.LoadingAnimatio
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButton
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarHost
+import com.shashluchok.medianotes.presentation.components.topbar.MediaTopBar
+import com.shashluchok.medianotes.presentation.data.ActionIcon
 import com.shashluchok.medianotes.presentation.screen.sketch.SketchViewModel.Action.ChangePenSettings
 import com.shashluchok.medianotes.presentation.screen.sketch.SketchViewModel.Action.OnChangeEraserSettings
 import com.shashluchok.medianotes.presentation.screen.sketch.SketchViewModel.Action.OnNewBitmap
 import com.shashluchok.medianotes.presentation.screen.sketch.SketchViewModel.DrawSettings
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 
@@ -141,34 +142,27 @@ private fun SketchScreen(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.surface,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.screen_sketch__topbar__title),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-                },
-                colors = TopAppBarDefaults.mediumTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
+            MediaTopBar(
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+                title = stringResource(R.string.screen_sketch__topbar__title),
+                navigationIcon = ActionIcon(
+                    painter = rememberVectorPainter(Icons.AutoMirrored.Rounded.ArrowBack),
+                    onClick = onDismissRequest
                 ),
-                navigationIcon = {
-                    MediaIconButton(
-                        painter = rememberVectorPainter(Icons.AutoMirrored.Rounded.ArrowBack),
-                        onClick = onDismissRequest
-                    )
-                },
-                actions = {
-                    MediaIconButton(
+                actions = persistentListOf(
+                    ActionIcon(
                         painter = rememberVectorPainter(Icons.Rounded.Save),
                         onClick = {
                             onAction(
                                 SketchViewModel.Action.SaveSketch(context = context)
                             )
                         },
-                        enabled = saveEnabled
+                        enabled = saveEnabled,
+                        colors = IconButtonDefaults.iconButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
                     )
-                }
+                )
             )
         },
         contentWindowInsets = WindowInsets.safeDrawing.exclude(
