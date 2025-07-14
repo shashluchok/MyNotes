@@ -82,6 +82,7 @@ private const val swipeToCancelDragOffsetMultiplier = 0.25f
 private val swipeToCancelAnimationBreakpoint = 10.dp
 
 private val textFieldVerticalPadding = 10.dp
+private const val textFieldMaxLines = 5
 
 private val voiceRecordingLayoutHorizontalPadding = 12.dp
 
@@ -402,6 +403,7 @@ private fun CreateMediaNoteLayout(
                 .padding(vertical = textFieldVerticalPadding)
                 .animateContentSize(),
             value = text,
+            maxLines = textFieldMaxLines,
             onValueChange = {
                 onTextChange(it)
             },
