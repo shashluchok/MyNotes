@@ -1,6 +1,7 @@
 package com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -9,9 +10,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
@@ -20,7 +19,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -45,7 +49,9 @@ private val scrollbarPadding = PaddingValues(end = 8.dp)
 
 private val emptyStatePadding = PaddingValues(horizontal = 16.dp)
 
-private const val listScrollOnImeOpenlAnimationDuration = 600
+private const val listAutoScrollDuration = 500
+
+private val scrollValuePerListItem = 350.dp
 
 @Composable
 internal fun MediaNotesList(
@@ -61,15 +67,35 @@ internal fun MediaNotesList(
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    val imeHeight = WindowInsets.ime.getBottom(LocalDensity.current)
+    val density = LocalDensity.current
 
-    LaunchedEffect(imeHeight) {
-        if (imeHeight >= 0) {
-            listState.animateScrollBy(
-                value = imeHeight.toFloat(),
-                animationSpec = tween(listScrollOnImeOpenlAnimationDuration)
-            )
+    var previousNotesSize by remember { mutableIntStateOf(notes.size) }
+
+    val notVisibleBottomItemsSize by remember {
+        derivedStateOf {
+            val allItemsLastIndex = listState.layoutInfo.totalItemsCount - 1
+            if (allItemsLastIndex >= 0) {
+                val visibleItemsLastIndex = listState.layoutInfo.visibleItemsInfo.last().index
+                allItemsLastIndex - visibleItemsLastIndex
+            } else {
+                0
+            }
         }
+    }
+
+    LaunchedEffect(notes) {
+        if (notes.size > previousNotesSize) {
+            with(density) {
+                listState.animateScrollBy(
+                    value = notVisibleBottomItemsSize * scrollValuePerListItem.toPx(),
+                    animationSpec = tween(
+                        durationMillis = listAutoScrollDuration,
+                        easing = LinearEasing
+                    )
+                )
+            }
+        }
+        previousNotesSize = notes.size
     }
 
     DisposableEffect(lifecycleOwner) {
