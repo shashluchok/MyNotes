@@ -1,91 +1,127 @@
 package com.shashluchok.medianotes.presentation.components.topbar
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.unit.dp
+import com.shashluchok.medianotes.presentation.components.AnimatedVisibilityOnDisplay
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButton
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButtonDefaults
+import com.shashluchok.medianotes.presentation.data.ActionIcon
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 
-@ExperimentalMaterial3Api
-internal object MediaTopAppBarDefaults {
+private val topBarPadding = PaddingValues(
+    horizontal = 4.dp
+)
+private val topBarHorizontalArrangement = Arrangement.spacedBy(4.dp)
+private val topAppBarHeight = 64.dp
 
-    @Composable
-    fun topAppBarColors(
-        containerColor: Color = MaterialTheme.colorScheme.surface,
-        scrolledContainerColor: Color = Color.Unspecified,
-        navigationIconContentColor: Color = MaterialTheme.colorScheme.primary,
-        titleContentColor: Color = MaterialTheme.colorScheme.onSurface,
-        actionIconContentColor: Color = Color.Unspecified
-    ) = TopAppBarDefaults.topAppBarColors(
-        containerColor,
-        scrolledContainerColor,
-        navigationIconContentColor,
-        titleContentColor,
-        actionIconContentColor
+private const val topBarIconAnimationDelayMultiplier = 50
+
+@Composable
+internal fun MediaTopBar(
+    title: String,
+    modifier: Modifier = Modifier,
+    navigationIcon: ActionIcon? = null,
+    actions: ImmutableList<ActionIcon> = persistentListOf()
+) {
+    MediaTopBar(
+        modifier = modifier,
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        },
+        navigationIcon = navigationIcon,
+        actions = actions
     )
 }
 
+@SuppressLint("UnusedContentLambdaTargetStateParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun MediaTopAppBar(
-    title: String,
-    onNavigationIconClick: () -> Unit,
+internal fun MediaTopBar(
+    title: @Composable () -> Unit,
     modifier: Modifier = Modifier,
-    colors: TopAppBarColors = MediaTopAppBarDefaults.topAppBarColors(),
-    navigationIconPainter: Painter = rememberVectorPainter(Icons.AutoMirrored.Rounded.ArrowBack),
-    actions: (@Composable RowScope.() -> Unit) = {}
+    navigationIcon: ActionIcon? = null,
+    actions: ImmutableList<ActionIcon> = persistentListOf()
 ) {
-    TopAppBar(
+    Row(
         modifier = modifier
-            .fillMaxWidth(),
-        title = {
+            .fillMaxWidth()
+            .windowInsetsPadding(TopAppBarDefaults.windowInsets)
+            .heightIn(min = topAppBarHeight)
+            .padding(topBarPadding),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = topBarHorizontalArrangement
+    ) {
+        navigationIcon?.let {
             AnimatedContent(
-                targetState = title,
-                transitionSpec = {
-                    slideInVertically { it } togetherWith slideOutVertically { -it }
-                }
-            ) {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = colors.titleContentColor
-                )
-            }
-        },
-        colors = colors,
-        navigationIcon = {
-            AnimatedContent(
-                targetState = navigationIconPainter,
+                targetState = it.painter,
                 transitionSpec = {
                     slideInHorizontally { -it } togetherWith slideOutVertically { -it }
                 }
             ) { painter ->
                 MediaIconButton(
                     painter = painter,
-                    onClick = onNavigationIconClick,
-                    colors = MediaIconButtonDefaults.iconButtonColors(
-                        contentColor = colors.navigationIconContentColor
+                    onClick = it.onClick,
+                    colors = it.colors ?: MediaIconButtonDefaults.iconButtonColors(
+                        contentColor = MaterialTheme.colorScheme.primary
                     )
                 )
             }
-        },
-        actions = actions
-    )
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            title()
+        }
+        AnimatedContent(
+            targetState = actions.size,
+            transitionSpec = {
+                slideInHorizontally(tween()) { it } togetherWith slideOutHorizontally { it }
+            }
+        ) { _ ->
+            Row {
+                actions.onEachIndexed { index, action ->
+                    AnimatedVisibilityOnDisplay(
+                        enter = slideInHorizontally(
+                            animationSpec = tween(
+                                delayMillis = (actions.lastIndex - index) * topBarIconAnimationDelayMultiplier
+                            )
+                        ) { it }
+                    ) {
+                        MediaIconButton(
+                            painter = action.painter,
+                            colors = action.colors ?: IconButtonDefaults.iconButtonColors(),
+                            onClick = action.onClick,
+                            contentDescription = action.contentDescription,
+                            enabled = action.enabled
+                        )
+                    }
+                }
+            }
+        }
+    }
 }

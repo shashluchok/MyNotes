@@ -19,6 +19,8 @@
     <string name="screen_gallery_images__topbar__title">Галерея</string>
 
     <string name="screen_image_editor__snackbar__save_error__title">Ошибка при сохранении</string>
+    <string name="screen_image_editor__topbar__view__title">%1s из %2s</string>
+    <string name="screen_image_editor__topbar__crop__title">Обрезка</string>
 
     <string name="screen_camera_capture__snackbar__error__title">Ошибка при сохранении</string>
 </resources>

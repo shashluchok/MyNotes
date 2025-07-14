@@ -33,6 +33,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.BottomSheetDefaults
@@ -68,7 +69,8 @@ import com.shashluchok.medianotes.presentation.components.LocalNavAnimatedVisibi
 import com.shashluchok.medianotes.presentation.components.LocalSharedTransitionScope
 import com.shashluchok.medianotes.presentation.components.camera.CameraPreview
 import com.shashluchok.medianotes.presentation.components.camera.rememberPreviewView
-import com.shashluchok.medianotes.presentation.components.topbar.MediaTopAppBar
+import com.shashluchok.medianotes.presentation.components.topbar.MediaTopBar
+import com.shashluchok.medianotes.presentation.data.ActionIcon
 import com.shashluchok.medianotes.presentation.modifiers.scrollbars.ScrollbarConfig
 import com.shashluchok.medianotes.presentation.modifiers.scrollbars.verticalScrollbar
 import com.shashluchok.medianotes.presentation.modifiers.shadow.ShadowPosition
@@ -180,13 +182,18 @@ private fun ImagePickerSheetContent(
             }
         ) { isTopBarVisible ->
             if (isTopBarVisible) {
-                MediaTopAppBar(
-                    modifier = Modifier.shadow(
-                        shadowPositions = persistentSetOf(ShadowPosition.BOTTOM),
-                        shadowVisible = gridState.canScrollBackward
-                    ),
+                MediaTopBar(
+                    modifier = Modifier
+                        .shadow(
+                            shadowPositions = persistentSetOf(ShadowPosition.BOTTOM),
+                            shadowVisible = gridState.canScrollBackward
+                        )
+                        .background(MaterialTheme.colorScheme.surface),
                     title = stringResource(R.string.screen_gallery_images__topbar__title),
-                    onNavigationIconClick = onDismiss
+                    navigationIcon = ActionIcon(
+                        painter = rememberVectorPainter(Icons.AutoMirrored.Rounded.ArrowBack),
+                        onClick = onDismiss
+                    )
                 )
             } else {
                 Box(contentAlignment = Alignment.Center) {
