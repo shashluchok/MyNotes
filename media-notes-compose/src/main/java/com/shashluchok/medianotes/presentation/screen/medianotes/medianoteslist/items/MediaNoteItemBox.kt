@@ -11,6 +11,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,8 @@ import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
 private val containerExpandedWidth = 420.dp
 private val containerPadding = PaddingValues(vertical = 16.dp, horizontal = 16.dp)
 private val containerShape = RoundedCornerShape(12.dp)
+private val containerBorderWidth = 1.dp
+private const val containerBorderAlpha = 0.35f
 
 private val selectionCheckboxSize = 20.dp
 private val selectionContentOffset = 36.dp
@@ -118,6 +121,11 @@ internal fun MediaNoteItemBox(
                         )
                         .clip(containerShape)
                         .background(MaterialTheme.colorScheme.surface)
+                        .border(
+                            width = containerBorderWidth,
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = containerBorderAlpha),
+                            shape = containerShape
+                        )
                         .then(widthModifier)
                 ) {
                     content(note)
