@@ -7,6 +7,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,7 +16,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -25,6 +30,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -52,6 +58,16 @@ private val emptyStatePadding = PaddingValues(horizontal = 16.dp)
 private const val listAutoScrollDuration = 500
 
 private val scrollValuePerListItem = 350.dp
+
+private val dateHeaderOuterPadding = PaddingValues(
+    vertical = 4.dp
+)
+private val dateHeaderInnerPadding = PaddingValues(
+    vertical = 4.dp,
+    horizontal = 6.dp
+)
+private const val dateHeaderBackgroundAlpha = 0.65f
+private val dateHeaderShape = RoundedCornerShape(12.dp)
 
 @Composable
 internal fun MediaNotesList(
@@ -128,6 +144,7 @@ internal fun MediaNotesList(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun MediaNotesList(
     mediaNotes: ImmutableList<MediaNoteItem>,
@@ -164,108 +181,116 @@ private fun MediaNotesList(
                         state = lazyListState,
                         config = ScrollbarConfig(padding = scrollbarPadding)
                     ),
+                horizontalAlignment = Alignment.CenterHorizontally,
                 state = lazyListState
             ) {
-                items(
-                    items = mediaNotes,
-                    key = { it.id }
-                ) { mediaNote ->
-                    MediaNoteItemBox(
-                        modifier = Modifier
-                            .animateItem()
-                            .pointerInput(Unit) {
-                                detectTapGestures(
-                                    onLongPress = {
-                                        onSelect(mediaNote)
-                                    },
-                                    onTap = {
-                                        when (mediaNote) {
-                                            is MediaNoteItem.Image -> {
-                                                scope.launch {
-                                                    lazyListState.scrollToItemIfNotVisible(mediaNote.id)
-                                                    onOpenImage(
-                                                        MediaImage(
-                                                            id = mediaNote.id,
-                                                            path = mediaNote.path,
-                                                            type = MediaImage.Type.IMAGE_NOTE
+                mediaNotes.groupBy {
+                    it.createdTimeStamp.dayAndMonth
+                }.onEach {
+                    stickyHeader {
+                        DateHeader(date = it.key)
+                    }
+                    itemsIndexed(
+                        items = it.value,
+                        key = { _, item -> item.id }
+                    ) { _, mediaNote ->
+                        MediaNoteItemBox(
+                            modifier = Modifier
+                                .animateItem()
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onLongPress = {
+                                            onSelect(mediaNote)
+                                        },
+                                        onTap = {
+                                            when (mediaNote) {
+                                                is MediaNoteItem.Image -> {
+                                                    scope.launch {
+                                                        lazyListState.scrollToItemIfNotVisible(mediaNote.id)
+                                                        onOpenImage(
+                                                            MediaImage(
+                                                                id = mediaNote.id,
+                                                                path = mediaNote.path,
+                                                                type = MediaImage.Type.IMAGE_NOTE
+                                                            )
                                                         )
-                                                    )
+                                                    }
                                                 }
-                                            }
 
-                                            is MediaNoteItem.Sketch -> {
-                                                scope.launch {
-                                                    lazyListState.scrollToItemIfNotVisible(mediaNote.id)
-                                                    onOpenImage(
-                                                        MediaImage(
-                                                            id = mediaNote.id,
-                                                            path = mediaNote.path,
-                                                            type = MediaImage.Type.SKETCH_NOTE
+                                                is MediaNoteItem.Sketch -> {
+                                                    scope.launch {
+                                                        lazyListState.scrollToItemIfNotVisible(mediaNote.id)
+                                                        onOpenImage(
+                                                            MediaImage(
+                                                                id = mediaNote.id,
+                                                                path = mediaNote.path,
+                                                                type = MediaImage.Type.SKETCH_NOTE
+                                                            )
                                                         )
-                                                    )
+                                                    }
                                                 }
-                                            }
 
-                                            is MediaNoteItem.Text,
-                                            is MediaNoteItem.Voice -> Unit
+                                                is MediaNoteItem.Text,
+                                                is MediaNoteItem.Voice -> Unit
+                                            }
                                         }
-                                    }
+                                    )
+                                },
+                            timeStamp = mediaNote.createdTimeStamp.hourAndMinute,
+                            note = mediaNote,
+                            isSelecting = selectedNotes.isNotEmpty(),
+                            onSelect = onSelect,
+                            selected = selectedNotes.contains(mediaNote)
+
+                        ) { mediaNoteItem ->
+                            when (mediaNoteItem) {
+                                is MediaNoteItem.Text -> TextItem(text = mediaNoteItem)
+                                is MediaNoteItem.Image -> ImageItem(
+                                    image = mediaNoteItem
                                 )
-                            },
-                        updatedTime = mediaNote.createdAt,
-                        note = mediaNote,
-                        isSelecting = selectedNotes.isNotEmpty(),
-                        onSelect = onSelect,
-                        selected = selectedNotes.contains(mediaNote)
 
-                    ) { mediaNoteItem ->
-                        when (mediaNoteItem) {
-                            is MediaNoteItem.Text -> TextItem(text = mediaNoteItem)
-                            is MediaNoteItem.Image -> ImageItem(
-                                image = mediaNoteItem
-                            )
+                                is MediaNoteItem.Sketch -> SketchItem(
+                                    sketch = mediaNoteItem
+                                )
 
-                            is MediaNoteItem.Sketch -> SketchItem(
-                                sketch = mediaNoteItem
-                            )
-
-                            is MediaNoteItem.Voice -> {
-                                VoiceItem(
-                                    voice = mediaNoteItem,
-                                    isPlaying = playVoiceInfo?.let {
-                                        it.mediaNote.id == mediaNoteItem.id && it.paused.not()
-                                    } ?: false,
-                                    playProgress = playVoiceInfo?.let {
-                                        if (it.mediaNote.id == mediaNoteItem.id) it.progress else 1f
-                                    } ?: 1f,
-                                    onPlay = {
-                                        onAction(MediaNotesListViewModel.Action.OnPlayClick(it))
-                                    },
-                                    onSeek = { mediaNote, progress ->
-                                        onAction(MediaNotesListViewModel.Action.OnSeek(mediaNote, progress))
-                                    },
-                                    onSeekStart = { mediaNote, progress ->
-                                        onAction(
-                                            MediaNotesListViewModel.Action.OnSeekStart(
-                                                mediaNote,
-                                                progress
+                                is MediaNoteItem.Voice -> {
+                                    VoiceItem(
+                                        voice = mediaNoteItem,
+                                        isPlaying = playVoiceInfo?.let {
+                                            it.mediaNote.id == mediaNoteItem.id && it.paused.not()
+                                        } ?: false,
+                                        playProgress = playVoiceInfo?.let {
+                                            if (it.mediaNote.id == mediaNoteItem.id) it.progress else 1f
+                                        } ?: 1f,
+                                        onPlay = {
+                                            onAction(MediaNotesListViewModel.Action.OnPlayClick(it))
+                                        },
+                                        onSeek = { mediaNote, progress ->
+                                            onAction(MediaNotesListViewModel.Action.OnSeek(mediaNote, progress))
+                                        },
+                                        onSeekStart = { mediaNote, progress ->
+                                            onAction(
+                                                MediaNotesListViewModel.Action.OnSeekStart(
+                                                    mediaNote,
+                                                    progress
+                                                )
                                             )
-                                        )
-                                    },
-                                    onSeekEnd = {
-                                        onAction(
-                                            MediaNotesListViewModel.Action.OnSeekEnd(it)
-                                        )
-                                    },
-                                    duration = playVoiceInfo?.let {
-                                        if (it.mediaNote.id == mediaNoteItem.id) {
-                                            it.remainingDuration
-                                        } else {
-                                            mediaNoteItem.duration
-                                        }
-                                    } ?: mediaNoteItem.duration,
-                                    seekEnabled = playVoiceInfo?.mediaNote == mediaNoteItem
-                                )
+                                        },
+                                        onSeekEnd = {
+                                            onAction(
+                                                MediaNotesListViewModel.Action.OnSeekEnd(it)
+                                            )
+                                        },
+                                        duration = playVoiceInfo?.let {
+                                            if (it.mediaNote.id == mediaNoteItem.id) {
+                                                it.remainingDuration
+                                            } else {
+                                                mediaNoteItem.duration
+                                            }
+                                        } ?: mediaNoteItem.duration,
+                                        seekEnabled = playVoiceInfo?.mediaNote == mediaNoteItem
+                                    )
+                                }
                             }
                         }
                     }
@@ -273,6 +298,25 @@ private fun MediaNotesList(
             }
         }
     }
+}
+
+@Composable
+private fun DateHeader(
+    date: String,
+    modifier: Modifier = Modifier
+) {
+    Text(
+        modifier = modifier
+            .padding(dateHeaderOuterPadding)
+            .background(
+                shape = dateHeaderShape,
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = dateHeaderBackgroundAlpha)
+            )
+            .padding(dateHeaderInnerPadding),
+        text = date,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
 
 private suspend fun LazyListState.scrollToItemIfNotVisible(itemKey: String) {

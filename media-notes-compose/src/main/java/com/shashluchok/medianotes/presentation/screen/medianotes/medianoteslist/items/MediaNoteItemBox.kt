@@ -45,7 +45,7 @@ import com.shashluchok.medianotes.presentation.components.LocalSharedTransitionS
 import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
 
 private val containerExpandedWidth = 420.dp
-private val containerPadding = PaddingValues(vertical = 16.dp, horizontal = 16.dp)
+private val containerPadding = PaddingValues(vertical = 4.dp, horizontal = 16.dp)
 private val containerShape = RoundedCornerShape(12.dp)
 private val containerBorderWidth = 1.dp
 private const val containerBorderAlpha = 0.35f
@@ -60,7 +60,7 @@ private val timeStampPadding = PaddingValues(horizontal = 12.dp)
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 internal fun MediaNoteItemBox(
-    updatedTime: String,
+    timeStamp: String,
     note: MediaNoteItem,
     selected: Boolean,
     isSelecting: Boolean,
@@ -139,7 +139,7 @@ internal fun MediaNoteItemBox(
                             .padding(timeStampPadding)
                     ) {
                         Text(
-                            text = updatedTime,
+                            text = timeStamp,
                             color = MaterialTheme.colorScheme.onPrimary,
                             style = MaterialTheme.typography.labelSmall
                         )
