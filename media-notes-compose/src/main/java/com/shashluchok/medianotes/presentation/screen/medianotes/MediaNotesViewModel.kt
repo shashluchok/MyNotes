@@ -128,43 +128,7 @@ internal class MediaNotesViewModel(
 
             MediaNotesAction.OnDeleteMediaNotesClick -> {
                 val selectedNotes = state.selectionState?.notes ?: return
-                mutableStateFlow.update {
-                    it.copy(
-                        alertDialogData = AlertDialogData(
-                            onDismiss = ::onDismissDialog,
-                            title = if (selectedNotes.size == 1) {
-                                resources.getString(R.string.screen_media_notes__dialog__note_delete__title)
-                            } else {
-                                resources.getString(R.string.screen_media_notes__dialog__notes_delete__title)
-                            },
-                            confirmButton = ActionButton(
-                                title = resources.getString(
-                                    R.string.screen_media_notes__dialog__note_delete__confirm_button
-                                ),
-                                onClick = {
-                                    viewModelScope.launch {
-                                        deleteMediaNote(
-                                            *selectedNotes.map { it.id }.toTypedArray()
-                                        )
-                                        cancelSelecting()
-                                        onDismissDialog()
-                                    }
-                                }
-                            ),
-                            message = if (selectedNotes.size == 1) {
-                                resources.getString(R.string.screen_media_notes__dialog__note_delete__message)
-                            } else {
-                                resources.getString(R.string.screen_media_notes__dialog__notes_delete__message)
-                            },
-                            dismissButton = ActionButton(
-                                title = resources.getString(
-                                    R.string.screen_media_notes__dialog__note_delete__cancel_button
-                                ),
-                                onClick = ::onDismissDialog
-                            )
-                        )
-                    )
-                }
+                showDeleteMediaNotesAlertDialog(selectedNotes)
             }
 
             MediaNotesAction.OnEditMediaNoteClick -> {
@@ -223,15 +187,19 @@ internal class MediaNotesViewModel(
             val editingTextNote = state.editingMediaNote
 
             editingTextNote?.let {
-                val mediaNote = getMediaNotesInteractor.mediaNotesFlow.value.firstOrNull {
-                    it.id == editingTextNote.id
-                } as? MediaNote.WithText ?: return@let null
-                updateMediaNote(
-                    when (mediaNote) {
-                        is MediaNote.Image -> mediaNote.copy(text = state.toolbarText)
-                        is MediaNote.Text -> mediaNote.copy(text = state.toolbarText)
-                    }
-                )
+                if (state.toolbarText.isEmpty() && editingTextNote is MediaNoteItem.Text) {
+                    showDeleteMediaNotesAlertDialog(persistentListOf(editingTextNote))
+                } else {
+                    val mediaNote = getMediaNotesInteractor.mediaNotesFlow.value.firstOrNull {
+                        it.id == editingTextNote.id
+                    } as? MediaNote.WithText ?: return@let null
+                    updateMediaNote(
+                        when (mediaNote) {
+                            is MediaNote.Image -> mediaNote.copy(text = state.toolbarText)
+                            is MediaNote.Text -> mediaNote.copy(text = state.toolbarText)
+                        }
+                    )
+                }
             } ?: createMediaNote(
                 MediaNote.Text(
                     text = state.toolbarText
@@ -244,6 +212,48 @@ internal class MediaNotesViewModel(
                     editingMediaNote = null
                 )
             }
+        }
+    }
+
+    private fun showDeleteMediaNotesAlertDialog(
+        notesToDelete: ImmutableList<MediaNoteItem>
+    ) {
+        mutableStateFlow.update {
+            it.copy(
+                alertDialogData = AlertDialogData(
+                    onDismiss = ::onDismissDialog,
+                    title = if (notesToDelete.size == 1) {
+                        resources.getString(R.string.screen_media_notes__dialog__note_delete__title)
+                    } else {
+                        resources.getString(R.string.screen_media_notes__dialog__notes_delete__title)
+                    },
+                    confirmButton = ActionButton(
+                        title = resources.getString(
+                            R.string.screen_media_notes__dialog__note_delete__confirm_button
+                        ),
+                        onClick = {
+                            viewModelScope.launch {
+                                deleteMediaNote(
+                                    *notesToDelete.map { it.id }.toTypedArray()
+                                )
+                                cancelSelecting()
+                                onDismissDialog()
+                            }
+                        }
+                    ),
+                    message = if (notesToDelete.size == 1) {
+                        resources.getString(R.string.screen_media_notes__dialog__note_delete__message)
+                    } else {
+                        resources.getString(R.string.screen_media_notes__dialog__notes_delete__message)
+                    },
+                    dismissButton = ActionButton(
+                        title = resources.getString(
+                            R.string.screen_media_notes__dialog__note_delete__cancel_button
+                        ),
+                        onClick = ::onDismissDialog
+                    )
+                )
+            )
         }
     }
 
