@@ -35,6 +35,7 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Crop
 import androidx.compose.material.icons.rounded.CropRotate
+import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -89,9 +90,9 @@ import com.shashluchok.medianotes.presentation.components.cropper.cropper.model.
 import com.shashluchok.medianotes.presentation.components.cropper.cropper.model.RectCropShape
 import com.shashluchok.medianotes.presentation.components.cropper.cropper.state.rememberCropState
 import com.shashluchok.medianotes.presentation.components.dialog.LoadingAnimationDialog
+import com.shashluchok.medianotes.presentation.components.dialog.MediaAlertDialog
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButtonDefaults
 import com.shashluchok.medianotes.presentation.components.rememberSystemBarsController
-import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarHost
 import com.shashluchok.medianotes.presentation.data.ActionIcon
 import com.shashluchok.medianotes.presentation.modifiers.scrollbars.ScrollbarConfig
@@ -142,62 +143,36 @@ internal fun ImageEditorScreen(
     }
 
     LaunchedEffect(image) {
-        viewModel.loadImages(context, image)
+        viewModel.onAction(ImageEditorViewModel.Action.OnDisplay(context, image))
     }
 
     LaunchedEffect(state.isImageSaved) {
         if (state.isImageSaved) onDismiss()
     }
 
+    LaunchedEffect(state.shouldDismiss) {
+        if (state.shouldDismiss) onDismiss()
+    }
+
     ImageEditorScreen(
         modifier = modifier,
         onDismiss = onDismiss,
-        images = state.images,
-        currentPageIndex = state.currentImageIndex,
-        onImageSelected = {
-            viewModel.onImageSelected(it)
-        },
-        onCaptionChange = viewModel::onCaptionChange,
-        caption = state.caption,
-        onCropChange = viewModel::onCropChange,
-        onSendCLick = viewModel::onSendClick,
-        isCropping = state.isCropping,
-        onRotate = viewModel::onRotate,
-        rotation = state.rotation,
-        onRotating = viewModel::onRotating,
-        rotating = state.rotating,
-        onCropDataChange = viewModel::onCropDataChange,
-        isLoading = state.isLoading,
-        snackbarData = state.snackbarData,
-        cropEnabled = state.cropEnabled
+        state = state,
+        onAction = viewModel::onAction
     )
 }
 
 @Composable
 private fun ImageEditorScreen(
     onDismiss: () -> Unit,
-    images: ImmutableList<MediaImage>,
-    currentPageIndex: Int,
-    onImageSelected: (Int) -> Unit,
-    onCaptionChange: (String) -> Unit,
-    caption: String,
-    onCropChange: (Boolean) -> Unit,
-    onSendCLick: (Context, LayoutDirection, Density) -> Unit,
-    isCropping: Boolean,
-    rotation: Float,
-    onRotate: () -> Unit,
-    onRotating: (Boolean) -> Unit,
-    rotating: Boolean,
-    onCropDataChange: (CropData) -> Unit,
-    isLoading: Boolean,
-    snackbarData: SnackbarData?,
-    cropEnabled: Boolean,
+    onAction: (ImageEditorViewModel.Action) -> Unit,
+    state: ImageEditorViewModel.State,
     modifier: Modifier = Modifier
 ) {
     BackHandler(
-        enabled = isCropping,
+        enabled = state.isCropping,
         onBack = {
-            onCropChange(false)
+            onAction(ImageEditorViewModel.Action.OnCroppingChange(false))
         }
     )
 
@@ -208,7 +183,7 @@ private fun ImageEditorScreen(
         snackbarHost = {
             val snackBarHostState = remember { SnackbarHostState() }
             SnackbarHost(
-                snackbarData = snackbarData,
+                snackbarData = state.snackbarData,
                 snackBarHostState = snackBarHostState
             )
         },
@@ -218,25 +193,52 @@ private fun ImageEditorScreen(
                     .padding(it)
                     .fillMaxSize()
                     .background(Color.Black),
-                images = images,
-                currentPageIndex = currentPageIndex,
+                images = state.images,
+                currentPageIndex = state.currentImageIndex,
                 onDismiss = onDismiss,
-                onImageSelected = onImageSelected,
-                onSendCLick = onSendCLick,
-                onCaptionChange = onCaptionChange,
-                caption = caption,
-                isCropping = isCropping,
-                onRotate = onRotate,
-                onCropChange = onCropChange,
-                rotation = rotation,
-                onRotating = onRotating,
-                rotating = rotating,
-                onCropDataChange = onCropDataChange,
-                isLoading = isLoading,
-                cropEnabled = cropEnabled
+                onImageSelected = {
+                    onAction(ImageEditorViewModel.Action.OnImageSelected(it))
+                },
+                onSendCLick = { context, layoutDirection, density ->
+                    onAction(
+                        ImageEditorViewModel.Action.OnSendClick(
+                            context,
+                            layoutDirection,
+                            density
+                        )
+                    )
+                },
+                onCaptionChange = {
+                    onAction(ImageEditorViewModel.Action.OnCaptionChange(it))
+                },
+                caption = state.caption,
+                isCropping = state.isCropping,
+                onRotate = {
+                    onAction(ImageEditorViewModel.Action.OnRotateClick)
+                },
+                onCropChange = {
+                    onAction(ImageEditorViewModel.Action.OnCroppingChange(it))
+                },
+                rotation = state.rotation,
+                onRotating = {
+                    onAction(ImageEditorViewModel.Action.OnRotating(it))
+                },
+                rotating = state.rotating,
+                onCropDataChange = {
+                    onAction(ImageEditorViewModel.Action.OnCropDataChange(it))
+                },
+                isLoading = state.isLoading,
+                cropEnabled = state.cropEnabled,
+                deleteEnabled = state.deleteEnabled,
+                onDeleteMediaNoteClick = {
+                    onAction(ImageEditorViewModel.Action.OnDeleteMediaNoteClick)
+                }
             )
         }
     )
+    state.alertDialogData?.let {
+        MediaAlertDialog(it)
+    }
 }
 
 @Composable
@@ -256,6 +258,8 @@ private fun ImageEditor(
     rotating: Boolean,
     onCropDataChange: (CropData) -> Unit,
     cropEnabled: Boolean,
+    deleteEnabled: Boolean,
+    onDeleteMediaNoteClick: () -> Unit,
     isLoading: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -324,9 +328,8 @@ private fun ImageEditor(
                             )
                         )
                     },
-                    actions =
-                    if (isCropping) {
-                        persistentListOf(
+                    actions = when {
+                        isCropping -> persistentListOf(
                             ActionIcon(
                                 painter = rememberVectorPainter(Icons.Rounded.CropRotate),
                                 onClick = onRotate,
@@ -346,22 +349,35 @@ private fun ImageEditor(
                                 )
                             )
                         )
-                    } else if (cropEnabled) {
-                        persistentListOf(
-                            ActionIcon(
-                                painter = rememberVectorPainter(Icons.Rounded.Crop),
-                                onClick = {
-                                    onCropChange(true)
-                                },
-                                colors = MediaIconButtonDefaults.iconButtonColors(
-                                    contentColor = Color.White
+
+                        cropEnabled -> {
+                            persistentListOf(
+                                ActionIcon(
+                                    painter = rememberVectorPainter(Icons.Rounded.Crop),
+                                    onClick = {
+                                        onCropChange(true)
+                                    },
+                                    colors = MediaIconButtonDefaults.iconButtonColors(
+                                        contentColor = Color.White
+                                    )
                                 )
                             )
-                        )
-                    } else {
-                        persistentListOf()
-                    }
+                        }
 
+                        deleteEnabled -> {
+                            persistentListOf(
+                                ActionIcon(
+                                    painter = rememberVectorPainter(Icons.Rounded.Delete),
+                                    onClick = onDeleteMediaNoteClick,
+                                    colors = MediaIconButtonDefaults.iconButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.error
+                                    )
+                                )
+                            )
+                        }
+
+                        else -> persistentListOf()
+                    }
                 )
             }
         }

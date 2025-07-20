@@ -58,6 +58,6 @@ internal fun appModule(
             androidContext().resources
         )
     }
-    viewModel { ImageEditorViewModel(get(), get(), get(), get()) }
+    viewModel { ImageEditorViewModel(get(), get(), get(), get(), get(), androidContext().resources) }
     viewModel { SketchViewModel(get(), get(), androidContext().resources) }
 }

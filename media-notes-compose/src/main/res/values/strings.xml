@@ -47,6 +47,11 @@
     <string name="screen_image_editor__snackbar__save_error__title">Ошибка при сохранении</string>
     <string name="screen_image_editor__topbar__crop__title">Обрезка</string>
 
+    <string name="screen_image_editor__dialog__note_delete__title">Удаление заметки</string>
+    <string name="screen_image_editor__dialog__note_delete__message">Вы уверены, что хотите удалить заметку? Это действие нельзя отменить.</string>
+    <string name="screen_image_editor__dialog__note_delete__confirm_button">Удалить</string>
+    <string name="screen_image_editor__dialog__note_delete__cancel_button">Отмена</string>
+
     <string name="screen_camera_capture__snackbar__error__title">Ошибка при сохранении</string>
 
     <string name="counter__total__title">из %1s</string>
