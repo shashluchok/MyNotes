@@ -1,5 +1,6 @@
 package com.shashluchok.medianotes.presentation.screen.sketch
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -62,8 +63,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastForEach
 import com.shashluchok.medianotes.R
 import com.shashluchok.medianotes.presentation.components.dialog.LoadingAnimationDialog
+import com.shashluchok.medianotes.presentation.components.dialog.MediaAlertDialog
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButton
-import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarHost
 import com.shashluchok.medianotes.presentation.components.topbar.MediaTopBar
 import com.shashluchok.medianotes.presentation.data.ActionIcon
@@ -102,35 +103,30 @@ internal fun SketchScreen(
         if (state.sketchSaved) onDismissRequest()
     }
 
+    BackHandler(
+        enabled = state.saveEnabled
+    ) {
+        viewModel.onAction(SketchViewModel.Action.OnDismissRequestWithUnsavedData)
+    }
+
     SketchScreen(
         modifier = modifier.fillMaxSize(),
-        saveEnabled = state.saveEnabled,
-        drawnPaths = state.paths,
-        currentPath = state.currentPath,
-        onAction = viewModel::onAction,
-        drawSettings = state.currentSettings,
-        undoEnabled = state.undoEnabled,
-        redoEnabled = state.redoEnabled,
-        isLoading = state.isLoading,
-        onDismissRequest = onDismissRequest,
-        snackbarData = state.snackbarData,
-        drawSettingsVisible = state.showDrawSettings
+        state = state,
+        onDismissRequest = {
+            if (state.saveEnabled) {
+                viewModel.onAction(SketchViewModel.Action.OnDismissRequestWithUnsavedData)
+            } else {
+                onDismissRequest()
+            }
+        },
+        onAction = viewModel::onAction
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SketchScreen(
-    saveEnabled: Boolean,
-    drawnPaths: ImmutableList<SketchViewModel.PathData>,
-    currentPath: SketchViewModel.PathData?,
     onAction: (SketchViewModel.Action) -> Unit,
-    undoEnabled: Boolean,
-    redoEnabled: Boolean,
-    drawSettings: DrawSettings,
-    isLoading: Boolean,
-    snackbarData: SnackbarData?,
-    drawSettingsVisible: Boolean,
+    state: SketchViewModel.State,
     modifier: Modifier = Modifier,
     onDismissRequest: () -> Unit
 ) {
@@ -157,7 +153,7 @@ private fun SketchScreen(
                                 SketchViewModel.Action.SaveSketch(context = context)
                             )
                         },
-                        enabled = saveEnabled,
+                        enabled = state.saveEnabled,
                         colors = IconButtonDefaults.iconButtonColors(
                             contentColor = MaterialTheme.colorScheme.primary
                         )
@@ -171,7 +167,7 @@ private fun SketchScreen(
         snackbarHost = {
             val snackBarHostState = remember { SnackbarHostState() }
             SnackbarHost(
-                snackbarData = snackbarData,
+                snackbarData = state.snackbarData,
                 snackBarHostState = snackBarHostState
             )
         }
@@ -185,19 +181,19 @@ private fun SketchScreen(
                     .fillMaxWidth()
                     .background(Color.White)
                     .weight(1f),
-                paths = drawnPaths,
-                currentPath = currentPath,
+                paths = state.paths,
+                currentPath = state.currentPath,
                 onSketchAction = onAction,
                 graphicsLayer = graphicsLayer,
-                isEraserEnabled = drawSettings is DrawSettings.Eraser
+                isEraserEnabled = state.currentSettings is DrawSettings.Eraser
             )
 
             SketchControls(
                 modifier = Modifier,
                 onUndo = { onAction(SketchViewModel.Action.Undo) },
                 onRedo = { onAction(SketchViewModel.Action.Redo) },
-                undoEnabled = undoEnabled,
-                redoEnabled = redoEnabled,
+                undoEnabled = state.undoEnabled,
+                redoEnabled = state.redoEnabled,
                 onChangeEraserThickness = { onAction(OnChangeEraserSettings(it)) },
                 onChangePenThickness = { onAction(ChangePenSettings.Thickness(it)) },
                 onChangePenColorHue = { onAction(ChangePenSettings.Hue(it)) },
@@ -210,16 +206,21 @@ private fun SketchScreen(
                     )
                 },
                 onChangeTool = { onAction(SketchViewModel.Action.ChangeDrawingTool) },
-                currentSettings = drawSettings,
-                drawSettingsVisible = drawSettingsVisible,
+                currentSettings = state.currentSettings,
+                drawSettingsVisible = state.showDrawSettings,
                 onChangeDrawSettingsVisibility = {
                     onAction(SketchViewModel.Action.SetDrawSettingsVisibility(it))
                 }
             )
         }
     }
-    if (isLoading) {
+    if (state.isLoading) {
         LoadingAnimationDialog()
+    }
+    state.alertDialogData?.let {
+        MediaAlertDialog(
+            alertDialogData = it
+        )
     }
 }
 

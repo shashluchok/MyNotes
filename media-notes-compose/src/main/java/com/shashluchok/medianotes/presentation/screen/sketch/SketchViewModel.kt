@@ -1,6 +1,7 @@
 package com.shashluchok.medianotes.presentation.screen.sketch
 
 import android.content.Context
+import android.content.res.Resources
 import android.graphics.Bitmap
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -15,6 +16,8 @@ import com.shashluchok.medianotes.data.MediaNote
 import com.shashluchok.medianotes.domain.file.SaveBitmapToFileInteractor
 import com.shashluchok.medianotes.domain.notes.create.CreateMediaNoteInteractor
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
+import com.shashluchok.medianotes.presentation.data.ActionButton
+import com.shashluchok.medianotes.presentation.data.AlertDialogData
 import com.shashluchok.medianotes.presentation.screen.AbsViewModel
 import com.shashluchok.medianotes.presentation.utils.middle
 import com.shashluchok.medianotes.presentation.utils.withWhiteBackground
@@ -31,7 +34,8 @@ import kotlin.time.measureTimedValue
 
 internal class SketchViewModel(
     private val createMediaNote: CreateMediaNoteInteractor,
-    private val saveBitmapToFile: SaveBitmapToFileInteractor
+    private val saveBitmapToFile: SaveBitmapToFileInteractor,
+    private val resources: Resources
 ) : AbsViewModel<SketchViewModel.State>() {
 
     data class State(
@@ -44,6 +48,7 @@ internal class SketchViewModel(
         val sketchSaved: Boolean = false,
         val snackbarData: SnackbarData? = null,
         val showDrawSettings: Boolean = false,
+        val alertDialogData: AlertDialogData? = null,
         internal val pen: DrawSettings.Pen = DrawSettings.Pen(),
         internal val eraser: DrawSettings.Eraser = DrawSettings.Eraser()
     ) {
@@ -85,6 +90,7 @@ internal class SketchViewModel(
     }
 
     sealed interface Action {
+        data object OnDismissRequestWithUnsavedData : Action
         data class SetDrawSettingsVisibility(val visible: Boolean) : Action
         data object OnNewPathStart : Action
         data class Draw(val offset: Offset) : Action
@@ -132,6 +138,40 @@ internal class SketchViewModel(
             is Action.OnNewBitmap -> onNewBitmap(action.bitmap)
             is Action.SaveSketch -> onSaveSketch(action.context)
             is Action.SetDrawSettingsVisibility -> setDrawSettingsVisibility(action.visible)
+            Action.OnDismissRequestWithUnsavedData -> onDismissRequestWithUnsavedData()
+        }
+    }
+
+    private fun onDismissRequestWithUnsavedData() {
+        mutableStateFlow.update {
+            it.copy(
+                alertDialogData = AlertDialogData(
+                    confirmButton = ActionButton(
+                        title = resources.getString(R.string.screen_sketch__dialog__unsaved_sketch__title),
+                        onClick = {
+                            mutableStateFlow.update {
+                                it.copy(
+                                    sketchSaved = true
+                                )
+                            }
+                            onDismissDialog()
+                        }
+                    ),
+                    dismissButton = ActionButton(
+                        title = resources.getString(R.string.screen_sketch__dialog__unsaved_sketch__dismiss_button),
+                        onClick = ::onDismissDialog
+                    ),
+                    title = resources.getString(R.string.screen_sketch__dialog__unsaved_sketch__title),
+                    message = resources.getString(R.string.screen_sketch__dialog__unsaved_sketch__message),
+                    onDismiss = ::onDismissDialog
+                )
+            )
+        }
+    }
+
+    private fun onDismissDialog() {
+        mutableStateFlow.update {
+            it.copy(alertDialogData = null)
         }
     }
 
