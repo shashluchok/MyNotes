@@ -261,7 +261,7 @@ private fun CameraCaptureFlashBox(
     }
 
     Box(
-       modifier = modifier.background(Color.White.copy(alpha = alpha.value))
+        modifier = modifier.background(Color.White.copy(alpha = alpha.value))
     )
 }
 

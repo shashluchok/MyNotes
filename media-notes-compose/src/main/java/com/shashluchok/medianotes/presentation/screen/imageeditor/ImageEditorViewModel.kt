@@ -83,7 +83,8 @@ internal class ImageEditorViewModel(
                             )
                         }
             }.toImmutableList()
-            val currentImageIndex = images.indexOf(initialImage).takeIf { it >= 0 } ?: 0
+            val currentImageIndex = images.map { it.id }
+                .indexOf(initialImage.id).takeIf { it >= 0 } ?: 0
             mutableStateFlow.update {
                 it.copy(
                     images = images,

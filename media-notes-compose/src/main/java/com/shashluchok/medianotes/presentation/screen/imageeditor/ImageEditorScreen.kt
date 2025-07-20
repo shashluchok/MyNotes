@@ -9,6 +9,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.ScaleToBounds
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -16,11 +17,18 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
@@ -43,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -56,6 +65,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import coil3.ImageLoader
 import coil3.request.CachePolicy
@@ -84,6 +94,8 @@ import com.shashluchok.medianotes.presentation.components.rememberSystemBarsCont
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarHost
 import com.shashluchok.medianotes.presentation.data.ActionIcon
+import com.shashluchok.medianotes.presentation.modifiers.scrollbars.ScrollbarConfig
+import com.shashluchok.medianotes.presentation.modifiers.scrollbars.verticalScrollbar
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import org.koin.androidx.compose.koinViewModel
@@ -96,6 +108,16 @@ private const val imageCropHandleSizePx = 100f
 private const val imageCropMaxZoom = 10f
 
 private val imageEditorMaxBitmapSize = Size(1080, 1920)
+
+private val imageTextBoxMaxHeight = 200.dp
+private val imageTextBoxOuterPadding = PaddingValues(16.dp)
+private val imageTextBoxShape = RoundedCornerShape(12.dp)
+private const val imageTextBoxBackgroundAlpha = 0.12f
+private val imageTextBoxInnerPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)
+private val imageTextBoxScrollbarConfig = ScrollbarConfig(
+    thickness = 4.dp,
+    padding = PaddingValues(end = 4.dp)
+)
 
 @Composable
 internal fun ImageEditorScreen(
@@ -461,9 +483,54 @@ private fun ImagePager(
                         rotation = rotation,
                         onRotating = onRotating
                     )
+
+                    val imageText = images[pageIndex].text
+
+                    AnimatedVisibility(
+                        visible = imageText.isNotEmpty() && pagerState.currentPageOffsetFraction == 0f,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        enter = fadeIn(tween()) + slideInVertically(tween()) { it },
+                        exit = fadeOut(tween())
+                    ) {
+                        ImageTextBox(text = imageText)
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ImageTextBox(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    val scrollable = rememberScrollState()
+    Box(
+        modifier = modifier
+            .navigationBarsPadding()
+            .heightIn(max = imageTextBoxMaxHeight)
+            .padding(imageTextBoxOuterPadding)
+            .clip(imageTextBoxShape)
+            .background(
+                color = Color.White.copy(alpha = imageTextBoxBackgroundAlpha)
+            )
+            .verticalScrollbar(
+                state = scrollable,
+                config = imageTextBoxScrollbarConfig,
+                alwaysVisible = true
+            )
+            .verticalScroll(scrollable)
+    ) {
+        Text(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(imageTextBoxInnerPadding),
+            style = MaterialTheme.typography.bodyLarge.copy(
+                color = Color.White
+            ),
+            text = text
+        )
     }
 }
 
