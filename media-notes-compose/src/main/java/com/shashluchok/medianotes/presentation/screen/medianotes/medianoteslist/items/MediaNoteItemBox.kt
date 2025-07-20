@@ -62,6 +62,7 @@ private val timeStampPadding = PaddingValues(horizontal = 12.dp)
 internal fun MediaNoteItemBox(
     timeStamp: String,
     note: MediaNoteItem,
+    editing: Boolean,
     selected: Boolean,
     isSelecting: Boolean,
     onSelect: (MediaNoteItem) -> Unit,
@@ -147,12 +148,11 @@ internal fun MediaNoteItemBox(
                 }
             }
 
-            if (isSelecting) {
+            if (isSelecting || editing) {
                 val background = animateColorAsState(
-                    targetValue = if (selected) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = selectionColorAlpha)
-                    } else {
-                        Color.Unspecified
+                    targetValue = when {
+                        selected || editing -> MaterialTheme.colorScheme.primary.copy(alpha = selectionColorAlpha)
+                        else -> Color.Unspecified
                     },
                     animationSpec = tween()
                 )

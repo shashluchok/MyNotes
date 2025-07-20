@@ -146,7 +146,9 @@ private fun MediaNotesScreen(
     val scope = rememberCoroutineScope()
 
     BackHandler(
-        enabled = state.selectionState != null || bottomSheetState.isVisible
+        enabled = state.selectionState != null ||
+            bottomSheetState.isVisible ||
+            state.isEditingMediaNote
     ) {
         when {
             bottomSheetState.isVisible -> scope.launch {
@@ -154,6 +156,7 @@ private fun MediaNotesScreen(
             }
 
             state.selectionState != null -> onAction(MediaNotesAction.OnCancelSelecting)
+            state.isEditingMediaNote -> onAction(MediaNotesAction.OnCancelEditClick)
         }
     }
 
@@ -252,11 +255,12 @@ private fun MediaNotesScreen(
                 notes = state.notes,
                 selectionState = state.selectionState,
                 onOpenImage = onOpenImage,
-                editableMediaNoteItem = state.editingMediaNote as? MediaNoteItem.Text,
+                isEditingMediaNote = state.isEditingMediaNote,
                 toolbarText = state.toolbarText,
                 recordingState = state.recordingState,
                 tooltipVisible = state.tooltipVisible,
-                onAction = onAction
+                onAction = onAction,
+                editingMediaNote = state.editingMediaNote
             )
             val scrimVisible = scaffoldState.bottomSheetState.run {
                 isVisible || targetValue == SheetValue.PartiallyExpanded
@@ -296,7 +300,8 @@ private fun Content(
     selectionState: MediaNotesState.SelectionState?,
     notes: ImmutableList<MediaNoteItem>,
     onOpenImage: (MediaImage) -> Unit,
-    editableMediaNoteItem: MediaNoteItem.Text?,
+    isEditingMediaNote: Boolean,
+    editingMediaNote: MediaNoteItem?,
     toolbarText: String,
     recordingState: MediaNotesState.RecordingState?,
     tooltipVisible: Boolean,
@@ -373,7 +378,8 @@ private fun Content(
             },
             notes = notes,
             selectedNotes = selectionState?.notes ?: persistentListOf(),
-            onOpenImage = onOpenImage
+            onOpenImage = onOpenImage,
+            editingNote = editingMediaNote
         )
 
         Column(
@@ -414,6 +420,7 @@ private fun Content(
                                 SelectionOption.COPY -> onAction(
                                     MediaNotesAction.OnCopyMediaNoteClick(clipboardManager)
                                 )
+
                                 SelectionOption.EDIT -> onAction(MediaNotesAction.OnEditMediaNoteClick)
                             }
                         }
@@ -439,7 +446,7 @@ private fun Content(
                             onAction(MediaNotesAction.OnSendClick)
                         },
                         text = toolbarText,
-                        editing = editableMediaNoteItem != null,
+                        editing = isEditingMediaNote,
                         onToolTipDismissRequest = {
                             onAction(MediaNotesAction.OnToolTipDismissRequest)
                         },

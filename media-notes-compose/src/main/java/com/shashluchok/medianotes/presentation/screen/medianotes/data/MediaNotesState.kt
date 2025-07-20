@@ -10,7 +10,7 @@ import kotlinx.collections.immutable.persistentListOf
 internal data class MediaNotesState(
     val topBarTitle: String,
     val toolbarText: String = "",
-    val editingMediaNote: MediaNoteItem.EditableMediaNoteItem? = null,
+    val editingMediaNote: MediaNoteItem? = null,
     val notes: ImmutableList<MediaNoteItem> = persistentListOf(),
     // Nested states
     val selectionState: SelectionState? = null,
@@ -21,6 +21,8 @@ internal data class MediaNotesState(
     val notificationData: NotificationData? = null,
     val snackbarData: SnackbarData? = null
 ) {
+    val isEditingMediaNote: Boolean = editingMediaNote != null
+
     data class RecordingState(
         val timerMillis: Long = 0L,
         val volumeLevel: Float = 0F

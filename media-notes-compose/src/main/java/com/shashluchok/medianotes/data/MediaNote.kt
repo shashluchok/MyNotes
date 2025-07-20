@@ -8,6 +8,10 @@ sealed interface MediaNote {
     val id: String
     val createdAt: Instant
 
+    sealed interface WithText : MediaNote {
+        val text: String
+    }
+
     data class Voice(
         override val id: String = UUID.randomUUID().toString(),
         override val createdAt: Instant = Clock.System.now(),
@@ -17,9 +21,9 @@ sealed interface MediaNote {
     data class Image(
         override val id: String = UUID.randomUUID().toString(),
         override val createdAt: Instant = Clock.System.now(),
-        val text: String = "",
+        override val text: String = "",
         val path: String
-    ) : MediaNote
+    ) : WithText
 
     data class Sketch(
         override val id: String = UUID.randomUUID().toString(),
@@ -30,6 +34,6 @@ sealed interface MediaNote {
     data class Text(
         override val id: String = UUID.randomUUID().toString(),
         override val createdAt: Instant = Clock.System.now(),
-        val value: String
-    ) : MediaNote
+        override val text: String
+    ) : WithText
 }

@@ -23,7 +23,9 @@ internal sealed interface MediaNoteItem {
         val dayAndMonth: String
     )
 
-    sealed interface EditableMediaNoteItem : MediaNoteItem
+    sealed interface WithText : MediaNoteItem {
+        val text: String
+    }
 
     val id: String
     val createdTimeStamp: CreatedTimeStamp
@@ -41,20 +43,20 @@ internal sealed interface MediaNoteItem {
         override val id: String,
         override val createdTimeStamp: CreatedTimeStamp,
         val path: String,
-        val text: String = ""
-    ) : EditableMediaNoteItem
+        override val text: String = ""
+    ) : WithText
 
     data class Sketch(
         override val id: String,
         override val createdTimeStamp: CreatedTimeStamp,
         val path: String
-    ) : EditableMediaNoteItem
+    ) : MediaNoteItem
 
     data class Text(
         override val id: String,
         override val createdTimeStamp: CreatedTimeStamp,
-        val value: String
-    ) : EditableMediaNoteItem
+        override val text: String
+    ) : WithText
 }
 
 internal suspend fun MediaNote.toMediaNoteItem(
@@ -77,7 +79,7 @@ internal suspend fun MediaNote.toMediaNoteItem(
     is MediaNote.Text -> MediaNoteItem.Text(
         id = id,
         createdTimeStamp = createdAt.toTimeStamp(resources),
-        value = value
+        text = text
     )
 
     is MediaNote.Voice -> {

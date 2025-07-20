@@ -74,6 +74,7 @@ internal fun MediaNotesList(
     listState: LazyListState,
     notes: ImmutableList<MediaNoteItem>,
     selectedNotes: ImmutableList<MediaNoteItem>,
+    editingNote: MediaNoteItem?,
     onSelect: (MediaNoteItem) -> Unit,
     onOpenImage: (MediaImage) -> Unit,
     modifier: Modifier = Modifier,
@@ -139,7 +140,8 @@ internal fun MediaNotesList(
             lazyListState = listState,
             onOpenImage = onOpenImage,
             playVoiceInfo = state.playingVoiceInfo,
-            onAction = viewModel::onAction
+            onAction = viewModel::onAction,
+            editingNote = editingNote
         )
     }
 }
@@ -148,6 +150,7 @@ internal fun MediaNotesList(
 @Composable
 private fun MediaNotesList(
     mediaNotes: ImmutableList<MediaNoteItem>,
+    editingNote: MediaNoteItem?,
     lazyListState: LazyListState,
     selectedNotes: ImmutableList<MediaNoteItem>,
     onOpenImage: (MediaImage) -> Unit,
@@ -240,7 +243,8 @@ private fun MediaNotesList(
                             note = mediaNote,
                             isSelecting = selectedNotes.isNotEmpty(),
                             onSelect = onSelect,
-                            selected = selectedNotes.contains(mediaNote)
+                            selected = selectedNotes.contains(mediaNote),
+                            editing = editingNote?.id == mediaNote.id
 
                         ) { mediaNoteItem ->
                             when (mediaNoteItem) {

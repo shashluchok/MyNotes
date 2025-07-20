@@ -112,8 +112,8 @@ internal class MediaNotesViewModel(
                 val selectedNote = state.selectionState?.notes
                 if (selectedNote?.size != 1) return
 
-                (selectedNote.firstOrNull() as? MediaNoteItem.Text)?.let {
-                    action.clipboardManager.setText(AnnotatedString(it.value))
+                (selectedNote.firstOrNull() as? MediaNoteItem.WithText)?.let {
+                    action.clipboardManager.setText(AnnotatedString(it.text))
                     mutableStateFlow.update {
                         it.copy(
                             notificationData = NotificationData(
@@ -171,19 +171,13 @@ internal class MediaNotesViewModel(
                 val selectedNotes = state.selectionState?.notes
                 if (selectedNotes?.size != 1) return
                 cancelSelecting()
-                when (val note = selectedNotes.first()) {
-                    is MediaNoteItem.Image -> {}
-                    is MediaNoteItem.Sketch -> {}
-                    is MediaNoteItem.Text -> {
-                        mutableStateFlow.update {
-                            it.copy(
-                                editingMediaNote = note,
-                                toolbarText = note.value
-                            )
-                        }
+                (selectedNotes.first() as? MediaNoteItem.WithText)?.let { note ->
+                    mutableStateFlow.update {
+                        it.copy(
+                            editingMediaNote = note,
+                            toolbarText = note.text
+                        )
                     }
-
-                    is MediaNoteItem.Voice -> Unit
                 }
             }
 
@@ -226,21 +220,21 @@ internal class MediaNotesViewModel(
 
     private fun onSendClick() {
         viewModelScope.launch {
-            val editingTextNote = state.editingMediaNote as? MediaNoteItem.Text
+            val editingTextNote = state.editingMediaNote
 
             editingTextNote?.let {
                 val mediaNote = getMediaNotesInteractor.mediaNotesFlow.value.firstOrNull {
                     it.id == editingTextNote.id
-                } as? MediaNote.Text ?: return@let null
-
+                } as? MediaNote.WithText ?: return@let null
                 updateMediaNote(
-                    mediaNote.copy(
-                        value = state.toolbarText
-                    )
+                    when (mediaNote) {
+                        is MediaNote.Image -> mediaNote.copy(text = state.toolbarText)
+                        is MediaNote.Text -> mediaNote.copy(text = state.toolbarText)
+                    }
                 )
             } ?: createMediaNote(
                 MediaNote.Text(
-                    value = state.toolbarText
+                    text = state.toolbarText
                 )
             )
 
@@ -255,7 +249,7 @@ internal class MediaNotesViewModel(
 
     private fun onTextChange(text: String) {
         state = state.copy(
-            toolbarText = text
+            toolbarText = text.trim()
         )
     }
 
@@ -423,8 +417,13 @@ internal class MediaNotesViewModel(
     }
 
     private fun ImmutableList<MediaNoteItem>.toSelectionOptions(): ImmutableSet<SelectionOption> {
-        val editable = size == 1 && any { it is MediaNoteItem.Voice }.not()
-        val copyable = size == 1 && first() is MediaNoteItem.Text
+        val editable = size == 1 && any {
+            it is MediaNoteItem.WithText
+        }
+        val copyable = size == 1 && any {
+            it is MediaNoteItem.WithText &&
+                it.text.isNotEmpty()
+        }
         return buildList {
             if (copyable) add(SelectionOption.COPY)
             add(SelectionOption.DELETE)

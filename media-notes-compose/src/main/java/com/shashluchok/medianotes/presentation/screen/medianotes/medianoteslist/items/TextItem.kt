@@ -28,7 +28,7 @@ internal fun TextItem(
         modifier = modifier
             .heightIn(min = textMinHeight)
             .padding(textPadding),
-        text = text.value,
+        text = text.text,
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurface
     )

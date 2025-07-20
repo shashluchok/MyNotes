@@ -195,7 +195,8 @@ internal fun MediaToolbar(
                     onTextChange = onTextChange,
                     onCameraClick = onCameraClick,
                     onSendClick = onSendClick,
-                    onSketchClick = onSketchClick
+                    onSketchClick = onSketchClick,
+                    editing = editing
                 )
                 this@Row.AnimatedVisibility(
                     visible = recordingState != null,
@@ -232,7 +233,7 @@ internal fun MediaToolbar(
             }
 
             AnimatedVisibility(
-                visible = text.isEmpty(),
+                visible = text.isEmpty() && !editing,
                 enter = slideInHorizontally(spring(stiffness = Spring.StiffnessLow)) { it }
             ) {
                 TooltipContainer(
@@ -365,6 +366,7 @@ private fun EditingHeader(
 @Composable
 private fun CreateMediaNoteLayout(
     text: String,
+    editing: Boolean,
     onTextChange: (String) -> Unit,
     onSketchClick: () -> Unit,
     onCameraClick: () -> Unit,
@@ -418,7 +420,7 @@ private fun CreateMediaNoteLayout(
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary)
         )
 
-        if (text.isEmpty()) {
+        if (text.isEmpty() && !editing) {
             MediaIconButton(
                 painter = rememberVectorPainter(Icons.Outlined.PhotoCamera),
                 onClick = onCameraClick
