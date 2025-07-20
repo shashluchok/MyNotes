@@ -146,7 +146,8 @@ internal fun ImageEditorScreen(
         rotating = state.rotating,
         onCropDataChange = viewModel::onCropDataChange,
         isLoading = state.isLoading,
-        snackbarData = state.snackbarData
+        snackbarData = state.snackbarData,
+        cropEnabled = state.cropEnabled
     )
 }
 
@@ -168,6 +169,7 @@ private fun ImageEditorScreen(
     onCropDataChange: (CropData) -> Unit,
     isLoading: Boolean,
     snackbarData: SnackbarData?,
+    cropEnabled: Boolean,
     modifier: Modifier = Modifier
 ) {
     BackHandler(
@@ -208,7 +210,8 @@ private fun ImageEditorScreen(
                 onRotating = onRotating,
                 rotating = rotating,
                 onCropDataChange = onCropDataChange,
-                isLoading = isLoading
+                isLoading = isLoading,
+                cropEnabled = cropEnabled
             )
         }
     )
@@ -230,6 +233,7 @@ private fun ImageEditor(
     onRotating: (Boolean) -> Unit,
     rotating: Boolean,
     onCropDataChange: (CropData) -> Unit,
+    cropEnabled: Boolean,
     isLoading: Boolean,
     modifier: Modifier = Modifier
 ) {
@@ -320,7 +324,7 @@ private fun ImageEditor(
                                 )
                             )
                         )
-                    } else {
+                    } else if (cropEnabled) {
                         persistentListOf(
                             ActionIcon(
                                 painter = rememberVectorPainter(Icons.Rounded.Crop),
@@ -332,6 +336,8 @@ private fun ImageEditor(
                                 )
                             )
                         )
+                    } else {
+                        persistentListOf()
                     }
 
                 )

@@ -44,6 +44,7 @@ internal class ImageEditorViewModel(
         val rotation: Float = 0F,
         val rotating: Boolean = false,
         val cropData: CropData? = null,
+        val cropEnabled: Boolean = false,
         val snackbarData: SnackbarData? = null
     )
 
@@ -86,7 +87,8 @@ internal class ImageEditorViewModel(
             mutableStateFlow.update {
                 it.copy(
                     images = images,
-                    currentImageIndex = currentImageIndex
+                    currentImageIndex = currentImageIndex,
+                    cropEnabled = initialImage.type == MediaImage.Type.GALLERY
                 )
             }
         }
