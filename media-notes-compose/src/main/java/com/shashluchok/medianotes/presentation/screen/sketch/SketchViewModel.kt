@@ -49,6 +49,7 @@ internal class SketchViewModel(
         val snackbarData: SnackbarData? = null,
         val showDrawSettings: Boolean = false,
         val alertDialogData: AlertDialogData? = null,
+        val hintVisible: Boolean = true,
         internal val pen: DrawSettings.Pen = DrawSettings.Pen(),
         internal val eraser: DrawSettings.Eraser = DrawSettings.Eraser()
     ) {
@@ -255,7 +256,8 @@ internal class SketchViewModel(
             state = state.copy(
                 currentPath = it.copy(
                     path = (it.path + offset).toImmutableList()
-                )
+                ),
+                hintVisible = false
             )
         }
     }

@@ -2,6 +2,9 @@ package com.shashluchok.medianotes.presentation.screen.sketch
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -9,6 +12,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -32,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -176,17 +181,32 @@ private fun SketchScreen(
         Column(
             modifier = Modifier.padding(it)
         ) {
-            SketchView(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White)
-                    .weight(1f),
-                paths = state.paths,
-                currentPath = state.currentPath,
-                onSketchAction = onAction,
-                graphicsLayer = graphicsLayer,
-                isEraserEnabled = state.currentSettings is DrawSettings.Eraser
-            )
+            Box(
+                modifier = Modifier.weight(1f)
+            ) {
+                SketchView(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.White),
+                    paths = state.paths,
+                    currentPath = state.currentPath,
+                    onSketchAction = onAction,
+                    graphicsLayer = graphicsLayer,
+                    isEraserEnabled = state.currentSettings is DrawSettings.Eraser
+                )
+                androidx.compose.animation.AnimatedVisibility(
+                    modifier = Modifier.align(Alignment.Center),
+                    visible = state.hintVisible,
+                    enter = fadeIn(),
+                    exit = fadeOut(tween())
+                ) {
+                    Text(
+                        text = stringResource(R.string.screen_sketch__hint__start_drawing__title),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = Color.Black
+                    )
+                }
+            }
 
             SketchControls(
                 modifier = Modifier,

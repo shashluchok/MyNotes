@@ -35,6 +35,7 @@
 
     <string name="screen_sketch__topbar__title">Скетч</string>
     <string name="screen_sketch__snackbar__save_error__title">Ошибка при сохранении</string>
+    <string name="screen_sketch__hint__start_drawing__title">Начните рисовать</string>
 
     <string name="screen_sketch__dialog__unsaved_sketch__title">Выход</string>
     <string name="screen_sketch__dialog__unsaved_sketch__message">У вас есть несохраненные изменения. Вы уверены, что хотите выйти?</string>
