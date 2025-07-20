@@ -8,7 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
 
 private val textPadding = PaddingValues(
     top = 12.dp,

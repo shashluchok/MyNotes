@@ -1,6 +1,6 @@
 package com.shashluchok.medianotes.presentation
 
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
 
 internal object SharedTransitionUtils {
 

@@ -42,7 +42,7 @@ import com.shashluchok.medianotes.presentation.SharedTransitionUtils.getKeyByEle
 import com.shashluchok.medianotes.presentation.components.LocalIsCompact
 import com.shashluchok.medianotes.presentation.components.LocalNavAnimatedVisibilityScope
 import com.shashluchok.medianotes.presentation.components.LocalSharedTransitionScope
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
 
 private val containerExpandedWidth = 420.dp
 private val containerPadding = PaddingValues(vertical = 4.dp, horizontal = 16.dp)

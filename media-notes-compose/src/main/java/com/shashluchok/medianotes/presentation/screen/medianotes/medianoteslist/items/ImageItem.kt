@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
 
 private val imageMinHeight = 150.dp
 private val imageMaxHeight = 300.dp

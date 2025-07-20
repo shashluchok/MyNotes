@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
 
 private val sketchMinHeight = 150.dp
 private val sketchMaxHeight = 300.dp

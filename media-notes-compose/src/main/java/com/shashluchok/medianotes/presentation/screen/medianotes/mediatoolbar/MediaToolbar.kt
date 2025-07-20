@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -34,15 +35,14 @@ import androidx.compose.material.icons.outlined.Draw
 import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material.icons.rounded.Cancel
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -50,13 +50,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
@@ -69,9 +74,8 @@ import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconBut
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButtonDefaults
 import com.shashluchok.medianotes.presentation.components.tooltip.TooltipContainer
 import com.shashluchok.medianotes.presentation.modifiers.pointerinput.draggableOnLongClick
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesState
 import com.shashluchok.medianotes.presentation.utils.toPx
-import org.koin.androidx.compose.koinViewModel
 import kotlin.math.absoluteValue
 
 private val toolbarMinHeight = 48.dp
@@ -80,6 +84,14 @@ private val maxVoiceIconOffset = 120.dp
 private val maxSwipeToCancelOffset = 30.dp
 private const val swipeToCancelDragOffsetMultiplier = 0.25f
 private val swipeToCancelAnimationBreakpoint = 10.dp
+
+private val toolbarEditingHeaderPadding = PaddingValues(
+    start = 16.dp,
+    end = 4.dp
+)
+private const val toolbarEditingHeaderBackgroundAlpha = 0.12f
+private val toolbarEditingHeaderHeight = 48.dp
+private val toolbarEditingHeaderDividerThickness = 1.dp
 
 private val textFieldVerticalPadding = 10.dp
 private const val textFieldMaxLines = 5
@@ -101,61 +113,13 @@ private val tooltipContentPadding = PaddingValues(
     bottom = 8.dp
 )
 
-@Composable
-internal fun MediaToolbar(
-    onCameraClick: () -> Unit,
-    onSketchClick: () -> Unit,
-    editableTextNote: MediaNoteItem.Text?,
-    onRecordAudioPermissionDenied: () -> Unit,
-    onRecordAudioPermissionUnavailable: () -> Unit,
-    modifier: Modifier = Modifier,
-    viewModel: MediaToolbarViewModel = koinViewModel()
-) {
-    val state = viewModel.stateFlow.collectAsState().value
-
-    val context = LocalContext.current
-
-    MediaToolbar(
-        modifier = modifier,
-        text = state.text,
-        recordingState = state.recordingState,
-        tooltipVisible = state.tooltipVisible,
-        onVoiceClick = {
-            viewModel.onAction(MediaToolbarViewModel.Action.OnVoiceClick)
-        },
-        onVoiceLongClick = {
-            viewModel.onAction(MediaToolbarViewModel.Action.OnVoiceLongClick(context))
-        },
-        onVoiceDragCancel = {
-            viewModel.onAction(MediaToolbarViewModel.Action.OnVoiceDragCancel)
-        },
-        onVoiceDragEnd = {
-            viewModel.onAction(MediaToolbarViewModel.Action.OnVoiceDragEnd)
-        },
-        onTextChange = { text ->
-            viewModel.onAction(MediaToolbarViewModel.Action.OnTextChange(text))
-        },
-        onSendClick = {
-            viewModel.onAction(MediaToolbarViewModel.Action.OnSendClick)
-        },
-        onToolTipDismissRequest = {
-            viewModel.onAction(MediaToolbarViewModel.Action.OnToolTipDismissRequest)
-        },
-        onRecordAudioPermissionDenied = onRecordAudioPermissionDenied,
-        onCameraClick = onCameraClick,
-        onSketchClick = onSketchClick,
-        onRecordAudioPermissionUnavailable = onRecordAudioPermissionUnavailable,
-        onCancelEditing = {
-            viewModel.onTextNoteToEdit(null)
-        }
-    )
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
-private fun MediaToolbar(
+internal fun MediaToolbar(
     text: String,
-    recordingState: MediaToolbarViewModel.RecordingState?,
+    editing: Boolean,
+    tooltipVisible: Boolean,
+    recordingState: MediaNotesState.RecordingState?,
     onCameraClick: () -> Unit,
     onVoiceClick: () -> Unit,
     onVoiceLongClick: () -> Unit,
@@ -164,16 +128,17 @@ private fun MediaToolbar(
     onSketchClick: () -> Unit,
     onSendClick: () -> Unit,
     onTextChange: (String) -> Unit,
-    tooltipVisible: Boolean,
     onToolTipDismissRequest: () -> Unit,
     onRecordAudioPermissionDenied: () -> Unit,
     onRecordAudioPermissionUnavailable: () -> Unit,
     onCancelEditing: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var voiceIconOffsetX by remember { mutableFloatStateOf(0f) }
-
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusRequester = remember { FocusRequester() }
+
+    var voiceIconOffsetX by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(recordingState) {
         if (recordingState == null) {
@@ -185,13 +150,33 @@ private fun MediaToolbar(
         }
     }
 
+    LaunchedEffect(editing) {
+        if (editing) {
+            keyboardController?.show()
+            focusRequester.requestFocus()
+        }
+    }
+
     Column(
-        modifier = modifier
+        modifier = modifier.then(
+            if (recordingState == null) {
+                Modifier.animateContentSize(alignment = Alignment.BottomCenter)
+            } else {
+                Modifier
+            }
+        )
     ) {
-        /*EditingHeader(
-            modifier = Modifier.fillMaxWidth(),
-            onCancelEditing = onCancelEditing
-        )*/
+        AnimatedVisibility(
+            visible = editing,
+            enter = fadeIn(tween()),
+            exit = fadeOut(tween())
+        ) {
+            EditingHeader(
+                modifier = Modifier.fillMaxWidth(),
+                onCancelEditing = onCancelEditing
+            )
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -204,6 +189,7 @@ private fun MediaToolbar(
             ) {
                 CreateMediaNoteLayout(
                     modifier = Modifier
+                        .focusRequester(focusRequester)
                         .fillMaxWidth(),
                     text = text,
                     onTextChange = onTextChange,
@@ -341,40 +327,37 @@ private fun VoiceRecordingTooltipContent(
 
 @Composable
 private fun EditingHeader(
-    modifier: Modifier = Modifier,
-    onCancelEditing: () -> Unit
+    onCancelEditing: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically
+    Column(
+        modifier = modifier
     ) {
-        Icon(
-            modifier = Modifier.size(24.dp),
-            painter = rememberVectorPainter(Icons.Rounded.EditNote),
-            tint = MaterialTheme.colorScheme.primary,
-            contentDescription = null
-        )
+        Row(
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = toolbarEditingHeaderBackgroundAlpha))
+                .padding(toolbarEditingHeaderPadding)
+                .height(toolbarEditingHeaderHeight),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                modifier = Modifier.weight(1f),
+                text = stringResource(R.string.screen_media_notes__toolbar__editing__title),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.primary
+            )
 
-        Text(
-            modifier = Modifier.weight(1f),
-            // Todo extract
-            text = "Edit note",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.primary
-        )
-        Icon(
-            modifier = Modifier.size(24.dp),
-            painter = rememberVectorPainter(Icons.Rounded.EditNote),
-            tint = MaterialTheme.colorScheme.primary,
-            contentDescription = null
-        )
-        MediaIconButton(
-            modifier = Modifier.size(24.dp),
-            painter = rememberVectorPainter(Icons.Rounded.Close),
-            colors = MediaIconButtonDefaults.iconButtonColors(
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-            ),
-            onClick = onCancelEditing
+            MediaIconButton(
+                painter = rememberVectorPainter(Icons.Rounded.Close),
+                colors = MediaIconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.outlineVariant
+                ),
+                onClick = onCancelEditing
+            )
+        }
+        HorizontalDivider(
+            thickness = toolbarEditingHeaderDividerThickness,
+            color = MaterialTheme.colorScheme.surfaceVariant
         )
     }
 }
@@ -402,10 +385,14 @@ private fun CreateMediaNoteLayout(
                 .weight(1f)
                 .padding(vertical = textFieldVerticalPadding)
                 .animateContentSize(),
-            value = text,
+            value = TextFieldValue(
+                text = text,
+                selection = TextRange(text.length)
+            ),
+
             maxLines = textFieldMaxLines,
             onValueChange = {
-                onTextChange(it)
+                onTextChange(it.text)
             },
             keyboardOptions = KeyboardOptions(
                 imeAction = ImeAction.Send

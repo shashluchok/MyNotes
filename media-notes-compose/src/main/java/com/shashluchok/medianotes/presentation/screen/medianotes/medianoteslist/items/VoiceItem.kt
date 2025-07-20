@@ -41,7 +41,7 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.shashluchok.medianotes.R
 import com.shashluchok.medianotes.presentation.components.waves.WavedBox
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
 import kotlinx.collections.immutable.ImmutableList
 
 private val voicePadding = 12.dp

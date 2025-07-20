@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButton
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButtonDefaults
 import com.shashluchok.medianotes.presentation.components.waves.WavedBox
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesState
 
 private const val voiceRecordingIconTintAnimationDuration = 100
 private const val voiceRecordingIconTintAnimationDelay = 100
@@ -19,7 +20,7 @@ private const val voiceRecordingIconTintAnimationDelay = 100
 @Composable
 internal fun VoiceToolbarIcon(
     onClick: () -> Unit,
-    recordingState: MediaToolbarViewModel.RecordingState?,
+    recordingState: MediaNotesState.RecordingState?,
     modifier: Modifier = Modifier
 ) {
     val iconTintColor by animateColorAsState(

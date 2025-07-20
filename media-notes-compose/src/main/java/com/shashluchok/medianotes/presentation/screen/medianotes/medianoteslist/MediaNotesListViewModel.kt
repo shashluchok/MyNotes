@@ -11,7 +11,7 @@ import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.STOPPED
 import com.shashluchok.audiorecorder.audio.AudioPlayerImpl
 import com.shashluchok.audiorecorder.audio.FileDataSource
 import com.shashluchok.medianotes.presentation.screen.AbsViewModel
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
 import com.shashluchok.medianotes.presentation.utils.toAudioDisplayString
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update

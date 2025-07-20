@@ -42,7 +42,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.shashluchok.medianotes.presentation.MediaImage
 import com.shashluchok.medianotes.presentation.modifiers.scrollbars.ScrollbarConfig
 import com.shashluchok.medianotes.presentation.modifiers.scrollbars.scrollbar
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
 import com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist.items.ImageItem
 import com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist.items.MediaNoteItemBox
 import com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist.items.SketchItem

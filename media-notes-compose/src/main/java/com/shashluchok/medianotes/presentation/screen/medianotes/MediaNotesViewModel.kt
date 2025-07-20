@@ -1,104 +1,101 @@
 package com.shashluchok.medianotes.presentation.screen.medianotes
 
 import android.content.Context
+import android.content.res.Resources
+import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.viewModelScope
+import com.shashluchok.audiorecorder.audio.AudioRecorderImpl
 import com.shashluchok.audiorecorder.audio.FileDataSource
 import com.shashluchok.audiorecorder.audio.codec.mpg123.Mpg123Decoder
 import com.shashluchok.medianotes.R
 import com.shashluchok.medianotes.container.AppInfoProvider
 import com.shashluchok.medianotes.data.MediaNote
+import com.shashluchok.medianotes.domain.notes.create.CreateMediaNoteInteractor
 import com.shashluchok.medianotes.domain.notes.delete.DeleteMediaNotesInteractor
 import com.shashluchok.medianotes.domain.notes.get.GetMediaNotesInteractor
+import com.shashluchok.medianotes.domain.notes.update.UpdateMediaNoteInteractor
 import com.shashluchok.medianotes.domain.settings.OpenSettingsInteractor
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
+import com.shashluchok.medianotes.presentation.data.ActionButton
+import com.shashluchok.medianotes.presentation.data.AlertDialogData
+import com.shashluchok.medianotes.presentation.data.NotificationData
 import com.shashluchok.medianotes.presentation.screen.AbsViewModel
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesAction
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesState
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesState.SelectionState.SelectionOption
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.toMediaNoteItem
 import com.shashluchok.medianotes.presentation.utils.addOrRemove
 import com.shashluchok.medianotes.presentation.utils.copyModified
-import com.shashluchok.medianotes.presentation.utils.toAudioDisplayString
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.format
-import kotlinx.datetime.format.char
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.Clock
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.DurationUnit
+import kotlin.time.toDuration
 
 internal class MediaNotesViewModel(
+    private val appInfoProvider: AppInfoProvider,
+    private val openSettings: OpenSettingsInteractor,
     private val getMediaNotesInteractor: GetMediaNotesInteractor,
     private val deleteMediaNote: DeleteMediaNotesInteractor,
-    private val appInfoProvider: AppInfoProvider,
-    private val openSettings: OpenSettingsInteractor
-) : AbsViewModel<MediaNotesViewModel.State>() {
+    private val createMediaNote: CreateMediaNoteInteractor,
+    private val updateMediaNote: UpdateMediaNoteInteractor,
+    private val resources: Resources
+) : AbsViewModel<MediaNotesState>() {
 
-    data class Selection(
-        val notes: ImmutableList<MediaNoteItem> = persistentListOf(),
-        val options: ImmutableSet<SelectionOption>
-    )
+    private val recorder = AudioRecorderImpl()
+    private val decoder = Mpg123Decoder()
 
-    enum class SelectionOption {
-        DELETE
-    }
+    private var timerJob: Job? = null
+    private var voiceClicks = 0
+    private var file: File? = null
 
-    data class State(
-        val topBarTitle: String,
-        val selection: Selection? = null,
-        val snackbarData: SnackbarData? = null,
-        val editingMediaNote: MediaNoteItem.EditableMediaNoteItem? = null,
-        val notes: ImmutableList<MediaNoteItem> = persistentListOf()
-    )
-
-    sealed interface Action {
-        data object OnCameraPermissionDenied : Action
-        data object OnRecordAudioPermissionDenied : Action
-        data class OnRequestPermissionUnavailable(val context: Context) : Action
-        data object OnNavigationIconClick : Action
-        data class OnSelectionOptionClick(val selectionOption: SelectionOption) : Action
-        data class OnSelectMediaNote(val mediaNoteItem: MediaNoteItem) : Action
-        data object OnCancelSelecting : Action
-    }
-
-    override val mutableStateFlow: MutableStateFlow<State> = MutableStateFlow(
-        State(
+    override val mutableStateFlow: MutableStateFlow<MediaNotesState> = MutableStateFlow(
+        MediaNotesState(
             topBarTitle = appInfoProvider.topBarConfiguration.title
         )
     )
-
-    private val decoder = Mpg123Decoder()
 
     init {
         subscribeToMediaNotes()
     }
 
     override fun onCleared() {
+        timerJob?.cancel()
         decoder.close()
+        recorder.destroy()
         super.onCleared()
     }
 
-    fun onAction(action: Action) {
+    fun onAction(action: MediaNotesAction) {
         when (action) {
-            Action.OnCameraPermissionDenied -> showSnackbar(
+            MediaNotesAction.OnCameraPermissionDenied -> showSnackbar(
                 snackbarData = SnackbarData(
                     titleResId = R.string.screen_media_notes__snackbar__permissions_denied__title,
                     onDismiss = ::onDismissSnackbar
                 )
             )
 
-            Action.OnRecordAudioPermissionDenied -> showSnackbar(
+            MediaNotesAction.OnRecordAudioPermissionDenied -> showSnackbar(
                 snackbarData = SnackbarData(
                     titleResId = R.string.screen_media_notes__snackbar__permissions_denied__title,
                     onDismiss = ::onDismissSnackbar
                 )
             )
 
-            is Action.OnRequestPermissionUnavailable -> showSnackbar(
+            is MediaNotesAction.OnRequestPermissionUnavailable -> showSnackbar(
                 snackbarData = SnackbarData(
                     titleResId = R.string.screen_media_notes__snackbar__go_to_settings__title,
                     actionTitleResId = R.string.screen_media_notes__snackbar__go_to_settings__action,
@@ -107,10 +104,106 @@ internal class MediaNotesViewModel(
                 )
             )
 
-            Action.OnNavigationIconClick -> onNavigationIconClick()
-            is Action.OnSelectionOptionClick -> onSelectionOptionClick(action.selectionOption)
-            is Action.OnSelectMediaNote -> onSelect(action.mediaNoteItem)
-            Action.OnCancelSelecting -> cancelSelecting()
+            MediaNotesAction.OnNavigationIconClick -> onNavigationIconClick()
+            is MediaNotesAction.OnSelectMediaNote -> onSelect(action.mediaNoteItem)
+            MediaNotesAction.OnCancelSelecting -> cancelSelecting()
+            MediaNotesAction.OnNotificationDismiss -> onNotificationDismiss()
+            is MediaNotesAction.OnCopyMediaNoteClick -> {
+                val selectedNote = state.selectionState?.notes
+                if (selectedNote?.size != 1) return
+
+                (selectedNote.firstOrNull() as? MediaNoteItem.Text)?.let {
+                    action.clipboardManager.setText(AnnotatedString(it.value))
+                    mutableStateFlow.update {
+                        it.copy(
+                            notificationData = NotificationData(
+                                iconType = NotificationData.IconType.TEXT_COPIED,
+                                message = R.string.screen_media_notes__notification__text_copied__title
+                            )
+                        )
+                    }
+                    cancelSelecting()
+                }
+            }
+
+            MediaNotesAction.OnDeleteMediaNotesClick -> {
+                val selectedNotes = state.selectionState?.notes ?: return
+                mutableStateFlow.update {
+                    it.copy(
+                        alertDialogData = AlertDialogData(
+                            onDismiss = ::onDismissDialog,
+                            title = if (selectedNotes.size == 1) {
+                                resources.getString(R.string.screen_media_notes__dialog__note_delete__title)
+                            } else {
+                                resources.getString(R.string.screen_media_notes__dialog__notes_delete__title)
+                            },
+                            confirmButton = ActionButton(
+                                title = resources.getString(
+                                    R.string.screen_media_notes__dialog__note_delete__confirm_button
+                                ),
+                                onClick = {
+                                    viewModelScope.launch {
+                                        deleteMediaNote(
+                                            *selectedNotes.map { it.id }.toTypedArray()
+                                        )
+                                        cancelSelecting()
+                                        onDismissDialog()
+                                    }
+                                }
+                            ),
+                            message = if (selectedNotes.size == 1) {
+                                resources.getString(R.string.screen_media_notes__dialog__note_delete__message)
+                            } else {
+                                resources.getString(R.string.screen_media_notes__dialog__notes_delete__message)
+                            },
+                            dismissButton = ActionButton(
+                                title = resources.getString(
+                                    R.string.screen_media_notes__dialog__note_delete__cancel_button
+                                ),
+                                onClick = ::onDismissDialog
+                            )
+                        )
+                    )
+                }
+            }
+
+            MediaNotesAction.OnEditMediaNoteClick -> {
+                val selectedNotes = state.selectionState?.notes
+                if (selectedNotes?.size != 1) return
+                cancelSelecting()
+                when (val note = selectedNotes.first()) {
+                    is MediaNoteItem.Image -> {}
+                    is MediaNoteItem.Sketch -> {}
+                    is MediaNoteItem.Text -> {
+                        mutableStateFlow.update {
+                            it.copy(
+                                editingMediaNote = note,
+                                toolbarText = note.value
+                            )
+                        }
+                    }
+
+                    is MediaNoteItem.Voice -> Unit
+                }
+            }
+
+            MediaNotesAction.OnCancelEditClick -> {
+                mutableStateFlow.update {
+                    it.copy(
+                        editingMediaNote = null,
+                        toolbarText = ""
+                    )
+                }
+            }
+
+            MediaNotesAction.OnSendClick -> onSendClick()
+            is MediaNotesAction.OnTextChange -> onTextChange(action.text)
+
+            MediaNotesAction.OnToolTipDismissRequest -> onDismissToolTip()
+            MediaNotesAction.OnVoiceClick -> onVoiceClick()
+            MediaNotesAction.OnVoiceDragCancel -> onStopRecording(save = false)
+            MediaNotesAction.OnVoiceDragEnd -> onStopRecording(save = true)
+            is MediaNotesAction.OnVoiceLongClick -> onStartRecording(context = action.context)
         }
     }
 
@@ -119,17 +212,55 @@ internal class MediaNotesViewModel(
             getMediaNotesInteractor.mediaNotesFlow.collect { notes ->
                 mutableStateFlow.update {
                     it.copy(
-                        notes = notes.map { note ->
-                            note.toMediaNoteItem()
-                        }.toImmutableList()
+                        notes = notes
+                            .sortedBy { it.createdAt }
+                            .map {
+                                it.toMediaNoteItem(decoder = decoder, resources = resources)
+                            }
+                            .toImmutableList()
                     )
                 }
             }
         }
     }
 
+    private fun onSendClick() {
+        viewModelScope.launch {
+            val editingTextNote = state.editingMediaNote as? MediaNoteItem.Text
+
+            editingTextNote?.let {
+                val mediaNote = getMediaNotesInteractor.mediaNotesFlow.value.firstOrNull {
+                    it.id == editingTextNote.id
+                } as? MediaNote.Text ?: return@let null
+
+                updateMediaNote(
+                    mediaNote.copy(
+                        value = state.toolbarText
+                    )
+                )
+            } ?: createMediaNote(
+                MediaNote.Text(
+                    value = state.toolbarText
+                )
+            )
+
+            mutableStateFlow.update {
+                it.copy(
+                    toolbarText = "",
+                    editingMediaNote = null
+                )
+            }
+        }
+    }
+
+    private fun onTextChange(text: String) {
+        state = state.copy(
+            toolbarText = text
+        )
+    }
+
     private fun onNavigationIconClick() {
-        if (state.selection != null) {
+        if (state.selectionState != null) {
             cancelSelecting()
         } else {
             appInfoProvider.topBarConfiguration.onDismiss()
@@ -137,12 +268,12 @@ internal class MediaNotesViewModel(
     }
 
     private fun onSelect(noteItem: MediaNoteItem) {
-        val selectedNotes = (state.selection?.notes ?: persistentListOf()).copyModified {
+        val selectedNotes = (state.selectionState?.notes ?: persistentListOf()).copyModified {
             addOrRemove(noteItem)
         }
 
-        val selection = if (selectedNotes.isNotEmpty()) {
-            Selection(
+        val selectionState = if (selectedNotes.isNotEmpty()) {
+            MediaNotesState.SelectionState(
                 notes = selectedNotes,
                 options = selectedNotes.toSelectionOptions()
             )
@@ -152,40 +283,23 @@ internal class MediaNotesViewModel(
 
         mutableStateFlow.update {
             it.copy(
-                selection = selection,
-                topBarTitle = selection?.let {
-                    selection.notes.size.toString()
-                } ?: appInfoProvider.topBarConfiguration.title
-
+                selectionState = selectionState
             )
         }
     }
 
-    private fun onSelectionOptionClick(selectionOption: SelectionOption) {
-        val selectedNotes = state.selection?.notes ?: return
-        when (selectionOption) {
-            /*SelectionOption.EDIT -> {
-                if (selectedNotes.size != 1) return
-                mutableStateFlow.update {
-                    it.copy(editingMediaNote = (selectedNotes.first() as? MediaNoteItem.EditableMediaNoteItem))
-                }
-            }*/
-
-            SelectionOption.DELETE -> {
-                viewModelScope.launch {
-                    deleteMediaNote(
-                        *selectedNotes.map { it.id }.toTypedArray()
-                    )
-                }
-            }
+    private fun onDismissDialog() {
+        mutableStateFlow.update {
+            it.copy(
+                alertDialogData = null
+            )
         }
-        cancelSelecting()
     }
 
     private fun cancelSelecting() {
         mutableStateFlow.update {
             it.copy(
-                selection = null,
+                selectionState = null,
                 topBarTitle = appInfoProvider.topBarConfiguration.title
             )
         }
@@ -205,58 +319,123 @@ internal class MediaNotesViewModel(
 
     private fun showSettings(context: Context) = openSettings(context)
 
+    private fun onNotificationDismiss() {
+        mutableStateFlow.update {
+            it.copy(
+                notificationData = null
+            )
+        }
+    }
+
+    private fun onStartRecording(context: Context) {
+        viewModelScope.launch(Dispatchers.IO) {
+            file = createAudioFile(context)
+            recorder.record(
+                dataSource = FileDataSource(file ?: return@launch),
+                onNewVolume = { newLevel ->
+                    mutableStateFlow.update {
+                        it.copy(
+                            recordingState = it.recordingState?.copy(
+                                volumeLevel = newLevel
+                            )
+                        )
+                    }
+                },
+                onStart = {
+                    voiceClicks = -1
+                    timerJob?.cancel()
+                    timerJob = launch {
+                        val initialTime = System.currentTimeMillis()
+                        mutableStateFlow.update {
+                            it.copy(
+                                recordingState = MediaNotesState.RecordingState()
+                            )
+                        }
+                        while (isActive) {
+                            mutableStateFlow.update {
+                                it.copy(
+                                    recordingState = it.recordingState?.copy(
+                                        timerMillis = System.currentTimeMillis() - initialTime
+                                    )
+                                )
+                            }
+                            delay(TIMER_UPDATE_FREQUENCY)
+                        }
+                    }
+                }
+            )
+        }
+    }
+
+    private fun onStopRecording(save: Boolean) {
+        viewModelScope.launch {
+            recorder.stop()
+            timerJob?.cancel()
+
+            val recordingDuration =
+                (state.recordingState?.timerMillis ?: 0L).toDuration(DurationUnit.MILLISECONDS)
+
+            val isNotLongEnough = recordingDuration < MIN_RECORDING_DURATION
+
+            file?.let {
+                if (save.not() || isNotLongEnough) {
+                    it.delete()
+                } else {
+                    createMediaNote(
+                        MediaNote.Voice(path = it.path)
+                    )
+                }
+            }
+            file = null
+
+            mutableStateFlow.update {
+                it.copy(
+                    recordingState = null
+                )
+            }
+        }
+    }
+
+    private fun onVoiceClick() {
+        if (voiceClicks % VOICE_TOOLTIP_CLICKS_COUNT == 0) {
+            showRecordingToolTip()
+        }
+        voiceClicks++
+    }
+
+    private fun showRecordingToolTip() {
+        state = state.copy(
+            tooltipVisible = true
+        )
+    }
+
+    private fun onDismissToolTip() {
+        state = state.copy(
+            tooltipVisible = false
+        )
+    }
+
+    private fun createAudioFile(context: Context): File {
+        return File(
+            context.filesDir,
+            "${Clock.System.now().epochSeconds}.$AUDIO_MP3_EXTENSION"
+        )
+    }
+
     private fun ImmutableList<MediaNoteItem>.toSelectionOptions(): ImmutableSet<SelectionOption> {
         val editable = size == 1 && any { it is MediaNoteItem.Voice }.not()
         val copyable = size == 1 && first() is MediaNoteItem.Text
         return buildList {
+            if (copyable) add(SelectionOption.COPY)
             add(SelectionOption.DELETE)
-            /*if (editable) add(SelectionOption.EDIT)
-            if (copyable) add(SelectionOption.COPY)*/
+            if (editable) add(SelectionOption.EDIT)
         }.toImmutableSet()
     }
 
-    private suspend fun MediaNote.toMediaNoteItem() =
-        when (this) {
-            is MediaNote.Image -> MediaNoteItem.Image(
-                id = id,
-                updatedAt = updatedAt.convertToDateString(),
-                path = path,
-                text = text
-            )
-
-            is MediaNote.Sketch -> MediaNoteItem.Sketch(
-                id = id,
-                updatedAt = updatedAt.convertToDateString(),
-                path = path
-            )
-
-            is MediaNote.Text -> MediaNoteItem.Text(
-                id = id,
-                updatedAt = updatedAt.convertToDateString(),
-                value = value
-            )
-
-            is MediaNote.Voice -> {
-                val (peaks, duration) = decoder.calculateVolumeLevelsAndDuration(
-                    FileDataSource(file = File(path))
-                )
-                MediaNoteItem.Voice(
-                    id = id,
-                    updatedAt = updatedAt.convertToDateString(),
-                    path = path,
-                    peaks = peaks,
-                    duration = duration.toAudioDisplayString(),
-                    durationMillis = duration.inWholeMilliseconds
-                )
-            }
-        }
-
-    private fun Instant.convertToDateString(): String {
-        val dateFormat = LocalDateTime.Format {
-            hour(); char(':'); minute()
-            char(' '); char('|'); char(' ')
-            dayOfMonth(); char('.'); monthNumber(); char('.'); year()
-        }
-        return this.toLocalDateTime(TimeZone.currentSystemDefault()).format(dateFormat)
+    companion object {
+        private val MIN_RECORDING_DURATION = 2000.milliseconds
+        private val TIMER_UPDATE_FREQUENCY = 100.milliseconds
+        private const val VOICE_TOOLTIP_CLICKS_COUNT = 3
+        private const val AUDIO_MP3_EXTENSION = "mp3"
     }
 }

@@ -8,6 +8,14 @@
     <string name="screen_media_notes__snackbar__go_to_settings__title">Перейдите в настройки и выдайте разрешения, пожалуйста</string>
     <string name="screen_media_notes__snackbar__go_to_settings__action">Настройки</string>
     <string name="screen_media_notes__notification__text_copied__title">Текст скопирован</string>
+    <string name="screen_media_notes__toolbar__editing__title">Редактирование</string>
+
+    <string name="screen_media_notes__dialog__notes_delete__title">Удаление заметок</string>
+    <string name="screen_media_notes__dialog__note_delete__title">Удаление заметки</string>
+    <string name="screen_media_notes__dialog__notes_delete__message">Вы уверены, что хотите удалить заметки? Это действие нельзя отменить.</string>
+    <string name="screen_media_notes__dialog__note_delete__message">Вы уверены, что хотите удалить заметку? Это действие нельзя отменить.</string>
+    <string name="screen_media_notes__dialog__note_delete__confirm_button">Удалить</string>
+    <string name="screen_media_notes__dialog__note_delete__cancel_button">Отмена</string>
 
     <string name="screen_media_notes__date_header__january__title">Января</string>
     <string name="screen_media_notes__date_header__february__title">Февраля</string>

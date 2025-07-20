@@ -3,7 +3,6 @@
 package com.shashluchok.medianotes.presentation.screen.medianotes
 
 import android.annotation.SuppressLint
-import android.content.Context
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -21,12 +20,15 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyRow
@@ -35,7 +37,9 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.outlined.ContentCopy
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.ModeEdit
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.BottomSheetScaffold
@@ -43,6 +47,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
@@ -57,6 +62,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.unit.dp
@@ -65,17 +71,21 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.shashluchok.medianotes.presentation.CAMERA_AND_IMAGES
 import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.components.counter.Counter
+import com.shashluchok.medianotes.presentation.components.dialog.MediaAlertDialog
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButton
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButtonDefaults
+import com.shashluchok.medianotes.presentation.components.notification.Notification
 import com.shashluchok.medianotes.presentation.components.scrim.Scrim
-import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarHost
-import com.shashluchok.medianotes.presentation.components.topbar.MediaTopAppBar
+import com.shashluchok.medianotes.presentation.components.topbar.MediaTopBar
+import com.shashluchok.medianotes.presentation.data.ActionIcon
 import com.shashluchok.medianotes.presentation.modifiers.shadow.ShadowPosition
 import com.shashluchok.medianotes.presentation.modifiers.shadow.shadow
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNotesViewModel.Action
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNotesViewModel.Selection
-import com.shashluchok.medianotes.presentation.screen.medianotes.MediaNotesViewModel.SelectionOption
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesAction
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesState
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesState.SelectionState.SelectionOption
 import com.shashluchok.medianotes.presentation.screen.medianotes.galleryimagepicker.ImagePickerSheetContent
 import com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist.MediaNotesList
 import com.shashluchok.medianotes.presentation.screen.medianotes.mediatoolbar.MediaToolbar
@@ -92,10 +102,14 @@ private val dividerThickness = 1.dp
 
 private val toolbarMinHeight = 48.dp
 
+private val notificationPadding = PaddingValues(
+    horizontal = 12.dp
+)
+
 private val bottomSheetCornerRadius = 28.dp
 
 @Composable
-internal fun MediaListScreen(
+internal fun MediaNotesScreen(
     onOpenCamera: () -> Unit,
     onOpenImage: (MediaImage) -> Unit,
     onSketchClick: () -> Unit,
@@ -104,44 +118,24 @@ internal fun MediaListScreen(
 ) {
     val state = viewModel.stateFlow.collectAsState().value
 
-    MediaListScreen(
+    MediaNotesScreen(
         modifier = modifier,
         onOpenImage = onOpenImage,
         onOpenCamera = onOpenCamera,
         onSketchClick = onSketchClick,
-        snackbarData = state.snackbarData,
-        onCameraPermissionDenied = {
-            viewModel.onAction(Action.OnCameraPermissionDenied)
-        },
-        onPermissionRequestUnavailable = { context ->
-            viewModel.onAction(Action.OnRequestPermissionUnavailable(context))
-        },
-        notes = state.notes,
-        selection = state.selection,
-        topBarTitle = state.topBarTitle,
-        onRecordAudioPermissionDenied = {
-            viewModel.onAction(Action.OnRecordAudioPermissionDenied)
-        },
-        editableMediaNoteItem = state.editingMediaNote as? MediaNoteItem.Text,
+        state = state,
         onAction = viewModel::onAction
     )
 }
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-private fun MediaListScreen(
-    snackbarData: SnackbarData?,
-    onCameraPermissionDenied: () -> Unit,
-    onRecordAudioPermissionDenied: () -> Unit,
-    onPermissionRequestUnavailable: (Context) -> Unit,
+private fun MediaNotesScreen(
     onSketchClick: () -> Unit,
     onOpenCamera: () -> Unit,
     onOpenImage: (MediaImage) -> Unit,
-    notes: ImmutableList<MediaNoteItem>,
-    selection: Selection?,
-    topBarTitle: String,
-    editableMediaNoteItem: MediaNoteItem.Text?,
-    onAction: (Action) -> Unit,
+    state: MediaNotesState,
+    onAction: (MediaNotesAction) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val bottomSheetState = rememberStandardBottomSheetState(
@@ -149,23 +143,23 @@ private fun MediaListScreen(
         initialValue = SheetValue.Hidden
     )
 
-    val scaffoldState = rememberBottomSheetScaffoldState(
-        bottomSheetState = bottomSheetState
-    )
-
     val scope = rememberCoroutineScope()
 
     BackHandler(
-        enabled = selection != null || bottomSheetState.isVisible
+        enabled = state.selectionState != null || bottomSheetState.isVisible
     ) {
         when {
             bottomSheetState.isVisible -> scope.launch {
                 bottomSheetState.hide()
             }
 
-            selection != null -> onAction(Action.OnCancelSelecting)
+            state.selectionState != null -> onAction(MediaNotesAction.OnCancelSelecting)
         }
     }
+
+    val scaffoldState = rememberBottomSheetScaffoldState(
+        bottomSheetState = bottomSheetState
+    )
 
     var sheetSwipeEnabled by remember {
         mutableStateOf(true)
@@ -194,7 +188,7 @@ private fun MediaListScreen(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissionsMap ->
         if (permissionsMap.any { it.value.not() }) {
-            onCameraPermissionDenied()
+            onAction(MediaNotesAction.OnCameraPermissionDenied)
         } else {
             scope.launch {
                 scaffoldState.bottomSheetState.partialExpand()
@@ -230,7 +224,7 @@ private fun MediaListScreen(
             },
             snackbarHost = {
                 SnackbarHost(
-                    snackbarData = snackbarData,
+                    snackbarData = state.snackbarData,
                     snackBarHostState = scaffoldState.snackbarHostState
                 )
             }
@@ -245,7 +239,7 @@ private fun MediaListScreen(
                         keyboardController?.hide()
                     } else {
                         if (imagesPermission.shouldShowRationale) {
-                            onPermissionRequestUnavailable(context)
+                            onAction(MediaNotesAction.OnRequestPermissionUnavailable(context))
                         } else {
                             requestPermissionLauncher.launch(
                                 CAMERA_AND_IMAGES.toTypedArray()
@@ -254,24 +248,15 @@ private fun MediaListScreen(
                     }
                 },
                 onSketchClick = onSketchClick,
-                onNavigationIconClick = {
-                    onAction(Action.OnNavigationIconClick)
-                },
-                topBarTitle = topBarTitle,
-                onSelect = {
-                    onAction(Action.OnSelectMediaNote(it))
-                },
-                notes = notes,
-                selection = selection,
-                onSelectionOptionClick = {
-                    onAction(Action.OnSelectionOptionClick(it))
-                },
+                topBarTitle = state.topBarTitle,
+                notes = state.notes,
+                selectionState = state.selectionState,
                 onOpenImage = onOpenImage,
-                onRecordAudioPermissionDenied = onRecordAudioPermissionDenied,
-                onPermissionRequestUnavailable = {
-                    onPermissionRequestUnavailable(context)
-                }
-//                editableMediaNoteItem = editableMediaNoteItem
+                editableMediaNoteItem = state.editingMediaNote as? MediaNoteItem.Text,
+                toolbarText = state.toolbarText,
+                recordingState = state.recordingState,
+                tooltipVisible = state.tooltipVisible,
+                onAction = onAction
             )
             val scrimVisible = scaffoldState.bottomSheetState.run {
                 isVisible || targetValue == SheetValue.PartiallyExpanded
@@ -287,30 +272,44 @@ private fun MediaListScreen(
                 color = BottomSheetDefaults.ScrimColor
             )
         }
+        Notification(
+            modifier = Modifier
+                .fillMaxWidth()
+                .safeDrawingPadding()
+                .padding(notificationPadding),
+            notificationData = state.notificationData,
+            onDismiss = {
+                onAction(MediaNotesAction.OnNotificationDismiss)
+            }
+        )
     }
+    MediaAlertDialog(
+        alertDialogData = state.alertDialogData
+    )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Content(
     onSketchClick: () -> Unit,
     onCameraClick: () -> Unit,
-    onNavigationIconClick: () -> Unit,
     topBarTitle: String,
-    selection: Selection?,
-    onRecordAudioPermissionDenied: () -> Unit,
-    onPermissionRequestUnavailable: () -> Unit,
+    selectionState: MediaNotesState.SelectionState?,
     notes: ImmutableList<MediaNoteItem>,
-    onSelect: (noteItem: MediaNoteItem) -> Unit,
     onOpenImage: (MediaImage) -> Unit,
-    onSelectionOptionClick: (SelectionOption) -> Unit,
+    editableMediaNoteItem: MediaNoteItem.Text?,
+    toolbarText: String,
+    recordingState: MediaNotesState.RecordingState?,
+    tooltipVisible: Boolean,
+    onAction: (MediaNotesAction) -> Unit,
     modifier: Modifier = Modifier
-//    editableMediaNoteItem: MediaNoteItem.Text?
 ) {
     val lazyListState = rememberLazyListState()
 
+    val clipboardManager = LocalClipboardManager.current
+    val context = LocalContext.current
+
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
     ) {
         AnimatedContent(
             modifier = Modifier
@@ -320,7 +319,7 @@ private fun Content(
                     shadowVisible = lazyListState.canScrollBackward
                 )
                 .background(MaterialTheme.colorScheme.surface),
-            targetState = selection != null,
+            targetState = selectionState != null,
             transitionSpec = {
                 if (targetState) {
                     slideInHorizontally(tween()) { -it } + fadeIn() togetherWith fadeOut(
@@ -341,19 +340,39 @@ private fun Content(
             } else {
                 rememberVectorPainter(Icons.AutoMirrored.Rounded.ArrowBack)
             }
-            MediaTopAppBar(
-                title = topBarTitle,
-                navigationIconPainter = navigationIcon,
-                onNavigationIconClick = onNavigationIconClick
+            MediaTopBar(
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface),
+                title = {
+                    if (isSelecting) {
+                        Counter(
+                            current = selectionState?.notes?.size ?: 0,
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
+                    } else {
+                        Text(
+                            text = topBarTitle,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                },
+                navigationIcon = ActionIcon(
+                    painter = navigationIcon,
+                    onClick = {
+                        onAction(MediaNotesAction.OnNavigationIconClick)
+                    }
+                )
             )
         }
 
         MediaNotesList(
             modifier = Modifier.weight(1f),
             listState = lazyListState,
-            onSelect = onSelect,
+            onSelect = {
+                onAction(MediaNotesAction.OnSelectMediaNote(it))
+            },
             notes = notes,
-            selectedNotes = selection?.notes ?: persistentListOf(),
+            selectedNotes = selectionState?.notes ?: persistentListOf(),
             onOpenImage = onOpenImage
         )
 
@@ -367,11 +386,14 @@ private fun Content(
                 .windowInsetsPadding(WindowInsets.safeDrawing.exclude(WindowInsets.statusBars))
 
         ) {
-            HorizontalDivider(thickness = dividerThickness)
+            HorizontalDivider(
+                thickness = dividerThickness,
+                color = MaterialTheme.colorScheme.surfaceVariant
+            )
 
             AnimatedContent(
                 modifier = Modifier.heightIn(min = toolbarMinHeight),
-                targetState = selection != null,
+                targetState = selectionState != null,
                 transitionSpec = {
                     if (targetState) {
                         slideInHorizontally(tween()) { it } + fadeIn() togetherWith
@@ -385,17 +407,56 @@ private fun Content(
                 if (state) {
                     SelectionToolBar(
                         modifier = Modifier.fillMaxWidth(),
-                        options = selection?.options ?: persistentSetOf(),
-                        onOptionClick = onSelectionOptionClick
+                        options = selectionState?.options ?: persistentSetOf(),
+                        onOptionClick = {
+                            when (it) {
+                                SelectionOption.DELETE -> onAction(MediaNotesAction.OnDeleteMediaNotesClick)
+                                SelectionOption.COPY -> onAction(
+                                    MediaNotesAction.OnCopyMediaNoteClick(clipboardManager)
+                                )
+                                SelectionOption.EDIT -> onAction(MediaNotesAction.OnEditMediaNoteClick)
+                            }
+                        }
                     )
                 } else {
                     MediaToolbar(
                         modifier = Modifier.fillMaxWidth(),
                         onCameraClick = onCameraClick,
                         onSketchClick = onSketchClick,
-                        onRecordAudioPermissionDenied = onRecordAudioPermissionDenied,
-                        onRecordAudioPermissionUnavailable = onPermissionRequestUnavailable,
-                        editableTextNote = null
+                        onRecordAudioPermissionDenied = {
+                            onAction(MediaNotesAction.OnRecordAudioPermissionDenied)
+                        },
+                        onRecordAudioPermissionUnavailable = {
+                            onAction(MediaNotesAction.OnRequestPermissionUnavailable(context))
+                        },
+                        onCancelEditing = {
+                            onAction(MediaNotesAction.OnCancelEditClick)
+                        },
+                        onTextChange = {
+                            onAction(MediaNotesAction.OnTextChange(it))
+                        },
+                        onSendClick = {
+                            onAction(MediaNotesAction.OnSendClick)
+                        },
+                        text = toolbarText,
+                        editing = editableMediaNoteItem != null,
+                        onToolTipDismissRequest = {
+                            onAction(MediaNotesAction.OnToolTipDismissRequest)
+                        },
+                        onVoiceClick = {
+                            onAction(MediaNotesAction.OnVoiceClick)
+                        },
+                        onVoiceLongClick = {
+                            onAction(MediaNotesAction.OnVoiceLongClick(context))
+                        },
+                        onVoiceDragCancel = {
+                            onAction(MediaNotesAction.OnVoiceDragCancel)
+                        },
+                        onVoiceDragEnd = {
+                            onAction(MediaNotesAction.OnVoiceDragEnd)
+                        },
+                        recordingState = recordingState,
+                        tooltipVisible = tooltipVisible
                     )
                 }
             }
@@ -463,8 +524,8 @@ private fun SheetContent(
 @Composable
 private fun SelectionOption.toIconPainter(): Painter {
     val imageVector = when (this) {
-//        SelectionOption.COPY -> Icons.Outlined.ContentCopy
-//        SelectionOption.EDIT -> Icons.Outlined.ModeEdit
+        SelectionOption.COPY -> Icons.Outlined.ContentCopy
+        SelectionOption.EDIT -> Icons.Outlined.ModeEdit
         SelectionOption.DELETE -> Icons.Outlined.Delete
     }
     return rememberVectorPainter(imageVector)
