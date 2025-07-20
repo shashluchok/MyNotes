@@ -45,6 +45,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -139,14 +140,17 @@ internal fun MediaToolbar(
     val focusRequester = remember { FocusRequester() }
 
     var voiceIconOffsetX by remember { mutableFloatStateOf(0f) }
+    var voiceIconResetting by remember { mutableStateOf(true) }
 
     LaunchedEffect(recordingState) {
         if (recordingState == null) {
+            voiceIconResetting = false
             animate(
                 initialValue = voiceIconOffsetX,
                 targetValue = 0f,
                 animationSpec = tween(durationMillis = voiceIconTransitionAnimationDuration)
             ) { value, _ -> voiceIconOffsetX = value }
+            voiceIconResetting = true
         }
     }
 
@@ -274,7 +278,7 @@ internal fun MediaToolbar(
                                 onDragEnd = onVoiceDragEnd,
                                 onDragCancel = onVoiceDragCancel,
                                 maxDragOffset = maxVoiceIconOffset.toPx(),
-                                enabled = voiceRecordingEnabled
+                                enabled = voiceRecordingEnabled && voiceIconResetting
                             ),
                         recordingState = recordingState,
                         onClick = {

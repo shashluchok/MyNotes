@@ -34,6 +34,7 @@ import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -42,6 +43,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
@@ -83,22 +85,22 @@ internal class MediaNotesViewModel(
         when (action) {
             MediaNotesAction.OnCameraPermissionDenied -> showSnackbar(
                 snackbarData = SnackbarData(
-                    titleResId = R.string.screen_media_notes__snackbar__permissions_denied__title,
+                    title = resources.getString(R.string.screen_media_notes__snackbar__permissions_denied__title),
                     onDismiss = ::onDismissSnackbar
                 )
             )
 
             MediaNotesAction.OnRecordAudioPermissionDenied -> showSnackbar(
                 snackbarData = SnackbarData(
-                    titleResId = R.string.screen_media_notes__snackbar__permissions_denied__title,
+                    title = resources.getString(R.string.screen_media_notes__snackbar__permissions_denied__title),
                     onDismiss = ::onDismissSnackbar
                 )
             )
 
             is MediaNotesAction.OnRequestPermissionUnavailable -> showSnackbar(
                 snackbarData = SnackbarData(
-                    titleResId = R.string.screen_media_notes__snackbar__go_to_settings__title,
-                    actionTitleResId = R.string.screen_media_notes__snackbar__go_to_settings__action,
+                    title = resources.getString(R.string.screen_media_notes__snackbar__go_to_settings__title),
+                    actionTitle = resources.getString(R.string.screen_media_notes__snackbar__go_to_settings__action),
                     action = { showSettings(action.context) },
                     onDismiss = ::onDismissSnackbar
                 )
@@ -364,6 +366,18 @@ internal class MediaNotesViewModel(
                                 )
                             }
                             delay(TIMER_UPDATE_FREQUENCY)
+                            if ((state.recordingState?.timerMillis ?: 0) > MAX_RECORDING_DURATION.inWholeMilliseconds) {
+                                onStopRecording(save = true)
+                                showSnackbar(
+                                    SnackbarData(
+                                        title = resources.getString(
+                                            R.string.screen_media_notes__snackbar__max_audio_duration__title
+                                        ),
+                                        onDismiss = ::onDismissSnackbar
+                                    )
+                                )
+                                cancel()
+                            }
                         }
                     }
                 }
@@ -443,6 +457,7 @@ internal class MediaNotesViewModel(
 
     companion object {
         private val MIN_RECORDING_DURATION = 2000.milliseconds
+        private val MAX_RECORDING_DURATION = 6.minutes
         private val TIMER_UPDATE_FREQUENCY = 100.milliseconds
         private const val VOICE_TOOLTIP_CLICKS_COUNT = 3
         private const val AUDIO_MP3_EXTENSION = "mp3"

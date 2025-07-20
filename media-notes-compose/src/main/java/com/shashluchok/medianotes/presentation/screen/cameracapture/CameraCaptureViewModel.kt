@@ -2,6 +2,7 @@ package com.shashluchok.medianotes.presentation.screen.cameracapture
 
 import android.content.ContentValues
 import android.content.Context
+import android.content.res.Resources
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.camera.core.Camera
@@ -35,7 +36,9 @@ import kotlinx.datetime.Clock
 import java.util.UUID
 import kotlin.time.Duration.Companion.seconds
 
-internal class CameraCaptureViewModel : AbsViewModel<CameraCaptureState>() {
+internal class CameraCaptureViewModel(
+    private val resources: Resources
+) : AbsViewModel<CameraCaptureState>() {
 
     sealed interface Action {
         data class BindPreview(
@@ -290,7 +293,7 @@ internal class CameraCaptureViewModel : AbsViewModel<CameraCaptureState>() {
             it.copy(
                 cameraState = CameraState.Active,
                 snackbarData = SnackbarData(
-                    titleResId = R.string.screen_camera_capture__snackbar__error__title,
+                    title = resources.getString(R.string.screen_camera_capture__snackbar__error__title),
                     onDismiss = ::onSnackbarDismiss
                 )
             )

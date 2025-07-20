@@ -315,7 +315,7 @@ internal class ImageEditorViewModel(
                         isLoading = false,
                         isImageSaved = false,
                         snackbarData = SnackbarData(
-                            titleResId = R.string.screen_image_editor__snackbar__save_error__title,
+                            title = resources.getString(R.string.screen_image_editor__snackbar__save_error__title),
                             onDismiss = {
                                 mutableStateFlow.update { it.copy(snackbarData = null) }
                             }

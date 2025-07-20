@@ -45,7 +45,7 @@ internal fun appModule(
     single<OpenSettingsInteractor> { OpenSettingsInteractorImpl() }
 
     // Viewmodels
-    viewModel { CameraCaptureViewModel() }
+    viewModel { CameraCaptureViewModel(androidContext().resources) }
     viewModel { GalleryImagePickerViewModel(get()) }
     viewModel {
         MediaNotesViewModel(
