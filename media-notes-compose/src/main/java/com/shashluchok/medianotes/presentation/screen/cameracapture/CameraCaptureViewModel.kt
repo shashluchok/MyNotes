@@ -148,7 +148,7 @@ internal class CameraCaptureViewModel : AbsViewModel<CameraCaptureState>() {
     ) {
         mutableStateFlow.update {
             it.copy(
-                cameraState = CameraState.NotActive
+                cameraState = CameraState.Capturing
             )
         }
 

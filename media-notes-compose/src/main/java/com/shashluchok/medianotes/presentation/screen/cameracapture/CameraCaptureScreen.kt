@@ -4,6 +4,7 @@ import androidx.camera.view.PreviewView
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
@@ -102,6 +103,8 @@ private val cameraControlsHeight = 64.dp
 private val cameraControlsHorizontalArrangement = 48.dp
 private val cameraControlsPadding = PaddingValues(bottom = 24.dp)
 private val cameraCaptureButtonBorderWidth = 4.dp
+
+private const val cameraCaptureFlashDuration = 500
 
 @Composable
 internal fun CameraCaptureScreen(
@@ -232,10 +235,34 @@ private fun CameraCaptureScreen(
                 }
             }
         }
-        if (cameraState.cameraState is CameraState.NotActive) {
+        if (cameraState.cameraState is CameraState.NotActive || cameraState.cameraState is CameraState.Capturing) {
             LoadingAnimationDialog()
         }
+
+        CameraCaptureFlashBox(
+            visible = cameraState.cameraState is CameraState.Capturing,
+            modifier = Modifier.fillMaxSize()
+        )
     }
+}
+
+@Composable
+private fun CameraCaptureFlashBox(
+    visible: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val alpha = remember { Animatable(0f) }
+
+    LaunchedEffect(visible) {
+        if (visible) {
+            alpha.snapTo(1f)
+            alpha.animateTo(0f, tween(durationMillis = cameraCaptureFlashDuration))
+        }
+    }
+
+    Box(
+       modifier = modifier.background(Color.White.copy(alpha = alpha.value))
+    )
 }
 
 @Composable

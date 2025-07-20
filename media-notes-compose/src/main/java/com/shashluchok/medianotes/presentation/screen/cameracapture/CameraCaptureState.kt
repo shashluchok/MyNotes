@@ -26,6 +26,8 @@ internal data class CameraCaptureState(
 
         data object Active : CameraState()
 
+        data object Capturing : CameraState()
+
         data class PhotoCaptured(
             val mediaImage: MediaImage
         ) : CameraState()
