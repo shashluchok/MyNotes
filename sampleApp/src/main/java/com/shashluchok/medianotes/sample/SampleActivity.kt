@@ -43,6 +43,6 @@ class SampleActivity : AppCompatActivity() {
 
     companion object {
         private const val DB_NAME = "MediaNotesDatabase"
-        private const val SAMPLE_TOP_BAR_TITLE = "Ярослав"
+        private const val SAMPLE_TOP_BAR_TITLE = "Заметки"
     }
 }
