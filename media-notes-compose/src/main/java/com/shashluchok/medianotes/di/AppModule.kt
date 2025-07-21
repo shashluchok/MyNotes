@@ -52,7 +52,7 @@ internal fun appModule(
 
     // Components
     single<CoroutineScope> { CoroutineScope(Dispatchers.Default) }
-    single<AudioPlayer> { AudioPlayerImpl(get()) }
+    single<AudioPlayer> { AudioPlayerImpl(get(), androidContext()) }
     single<Resources> { androidContext().resources }
 
     // Viewmodels

@@ -38,4 +38,5 @@ android {
 dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.collections.immutable)
+    implementation(libs.androidx.media3.exoplayer)
 }

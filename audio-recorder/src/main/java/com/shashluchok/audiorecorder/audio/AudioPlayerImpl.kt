@@ -1,124 +1,143 @@
 package com.shashluchok.audiorecorder.audio
 
-import android.media.MediaPlayer
-import android.media.MediaPlayer.OnCompletionListener
-import android.media.MediaPlayer.OnPreparedListener
+import android.content.Context
+import android.net.Uri
+import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.milliseconds
 
 class AudioPlayerImpl(
-    scope: CoroutineScope
-) : AudioPlayer, OnCompletionListener, OnPreparedListener, MediaPlayer.OnErrorListener {
-
-    private val mediaPlayer = MediaPlayer()
+    private val scope: CoroutineScope,
+    context: Context
+) : AudioPlayer {
 
     override val state = MutableStateFlow(PlayerState.RELEASED)
     override val playInfoState: MutableStateFlow<AudioPlayer.PlayInfo?> = MutableStateFlow(null)
 
+    private var isLoaded = false
+
+    private val exoPlayer: ExoPlayer by lazy {
+        ExoPlayer.Builder(context).build()
+    }
+
     init {
+
         scope.launch(Dispatchers.Default) {
             while (isActive) {
-                if (state.value != PlayerState.RELEASED) {
-                    playInfoState.update {
-                        AudioPlayer.PlayInfo(
-                            progress = currentProgress,
-                            remainingDuration = remainingDuration
-                        )
+                if (state.value != PlayerState.RELEASED && isLoaded) {
+                    withContext(Dispatchers.Main) {
+                        playInfoState.update {
+                            AudioPlayer.PlayInfo(
+                                progress = currentProgress,
+                                remainingDuration = remainingDuration
+                            )
+                        }
                     }
                 }
+                delay(PLAYER_STATE_INFO_UPDATE_PERIOD)
+            }
+        }
+
+        exoPlayer.addListener(object : Player.Listener {
+            override fun onPlaybackStateChanged(playbackState: Int) {
+                state.value = when (playbackState) {
+                    Player.STATE_ENDED -> PlayerState.COMPLETED
+                    else -> state.value
+                }
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                state.value = PlayerState.RELEASED
+            }
+        })
+    }
+
+    override fun load(dataSource: FileDataSource) {
+        scope.launch(Dispatchers.Main) {
+            try {
+                val uri = Uri.fromFile(dataSource.file)
+                val mediaItem = MediaItem.fromUri(uri)
+                exoPlayer.setMediaItem(mediaItem)
+                exoPlayer.prepare()
+                isLoaded = true
+                state.value = PlayerState.INITIALIZED
+            } catch (e: Exception) {
+                state.value = PlayerState.RELEASED
+                isLoaded = false
             }
         }
     }
 
-    override fun load(dataSource: FileDataSource) {
-        mediaPlayer.setOnCompletionListener(this)
-        mediaPlayer.setOnPreparedListener(this)
-        mediaPlayer.setOnErrorListener(this)
-        try {
-            mediaPlayer.reset()
-            state.value = PlayerState.RELEASED
-            mediaPlayer.setDataSource(dataSource.openInputStream().fd)
-            mediaPlayer.prepareAsync()
-        } catch (e: Exception) {
-            // ...
-        }
-    }
-
     override fun play() {
-        if (state.value != PlayerState.RELEASED && !mediaPlayer.isPlaying) {
-            mediaPlayer.start()
-            state.update {
-                PlayerState.PLAYING
+        scope.launch(Dispatchers.Main) {
+            if (isLoaded) {
+                exoPlayer.play()
+                state.value = PlayerState.PLAYING
             }
         }
     }
 
     override fun pause() {
-        if (state.value != PlayerState.RELEASED && mediaPlayer.isPlaying) {
-            mediaPlayer.pause()
-            state.update {
-                PlayerState.PAUSED
+        scope.launch(Dispatchers.Main) {
+            if (isLoaded && exoPlayer.isPlaying) {
+                exoPlayer.pause()
+                state.value = PlayerState.PAUSED
             }
         }
     }
 
     override fun stop() {
-        if (state.value != PlayerState.RELEASED) {
-            mediaPlayer.stop()
-            state.update {
-                PlayerState.STOPPED
+        scope.launch(Dispatchers.Main) {
+            if (isLoaded) {
+                exoPlayer.stop()
+                state.value = PlayerState.STOPPED
             }
         }
     }
 
     override fun seek(timeStamp: Int) {
-        if (state.value != PlayerState.RELEASED) {
-            mediaPlayer.seekTo(timeStamp)
-            state.update {
-                PlayerState.SEEKING
+        scope.launch(Dispatchers.Main) {
+            if (isLoaded) {
+                exoPlayer.seekTo(timeStamp.toLong())
+                state.value = PlayerState.SEEKING
             }
         }
     }
 
     override fun destroy() {
-        mediaPlayer.release()
-        state.update { PlayerState.RELEASED }
-    }
-
-    override fun onPrepared(mp: MediaPlayer) {
-        state.update { PlayerState.INITIALIZED }
-    }
-
-    override fun onCompletion(mp: MediaPlayer) {
-        mediaPlayer.stop()
-        state.value = PlayerState.COMPLETED
-    }
-
-    override fun onError(mp: MediaPlayer, what: Int, extra: Int): Boolean {
-        // ...
-        return true
+        scope.launch(Dispatchers.Main) {
+            exoPlayer.release()
+            isLoaded = false
+            state.value = PlayerState.RELEASED
+        }
     }
 
     private val currentProgress: Float
-        get() {
-            return if (state.value != PlayerState.RELEASED) {
-                mediaPlayer.currentPosition / mediaPlayer.duration.toFloat()
-            } else {
-                0f
-            }
+        get() = if (isLoaded && exoPlayer.duration > 0) {
+            exoPlayer.currentPosition / exoPlayer.duration.toFloat()
+        } else {
+            0f
         }
 
     private val remainingDuration: Int
-        get() {
-            return if (state.value != PlayerState.RELEASED) {
-                mediaPlayer.duration - mediaPlayer.currentPosition
-            } else {
-                0
-            }
+        get() = if (isLoaded) {
+            (exoPlayer.duration - exoPlayer.currentPosition).toInt()
+        } else {
+            0
         }
+
+    companion object {
+        private val PLAYER_STATE_INFO_UPDATE_PERIOD = 10.milliseconds
+    }
 }

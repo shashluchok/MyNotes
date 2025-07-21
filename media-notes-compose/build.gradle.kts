@@ -33,6 +33,7 @@ android {
 
 dependencies {
     implementation(projects.audioRecorder)
+    implementation(libs.androidx.media3.exoplayer)
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
