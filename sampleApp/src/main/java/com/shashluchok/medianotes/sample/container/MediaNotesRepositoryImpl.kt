@@ -74,7 +74,7 @@ class MediaNotesRepositoryImpl(
             DbMediaNote.Type.TEXT -> MediaNote.Text(
                 id = id,
                 createdAt = createdAt,
-                value = text ?: ""
+                text = text ?: ""
             )
         }
     }
@@ -99,7 +99,7 @@ class MediaNotesRepositoryImpl(
             is MediaNote.Text -> DbMediaNote(
                 id = id,
                 createdAt = createdAt,
-                text = value,
+                text = text,
                 type = DbMediaNote.Type.TEXT
             )
 

@@ -437,8 +437,10 @@ internal class MediaNotesViewModel(
     }
 
     private fun createAudioFile(context: Context): File {
+        val audioDir = File(context.filesDir, AUDIO_FILES_DIR_NAME)
+        if (audioDir.exists().not()) audioDir.mkdirs()
         return File(
-            context.filesDir,
+            audioDir,
             "${Clock.System.now().epochSeconds}.$AUDIO_MP3_EXTENSION"
         )
     }
@@ -464,5 +466,6 @@ internal class MediaNotesViewModel(
         private val TIMER_UPDATE_FREQUENCY = 100.milliseconds
         private const val VOICE_TOOLTIP_CLICKS_COUNT = 3
         private const val AUDIO_MP3_EXTENSION = "mp3"
+        private const val AUDIO_FILES_DIR_NAME = "audios"
     }
 }
