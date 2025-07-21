@@ -81,5 +81,5 @@ internal fun appModule(
         )
     }
     viewModel { SketchViewModel(get(), get(), get()) }
-    viewModel { MediaNotesListViewModel(get()) }
+    viewModel { MediaNotesListViewModel(get(), get(), get()) }
 }

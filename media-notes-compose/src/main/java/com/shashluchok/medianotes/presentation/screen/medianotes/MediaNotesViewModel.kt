@@ -7,7 +7,6 @@ import androidx.lifecycle.viewModelScope
 import com.shashluchok.audiorecorder.audio.AudioPlayer
 import com.shashluchok.audiorecorder.audio.AudioRecorderImpl
 import com.shashluchok.audiorecorder.audio.FileDataSource
-import com.shashluchok.audiorecorder.audio.codec.mpg123.Mpg123Decoder
 import com.shashluchok.medianotes.R
 import com.shashluchok.medianotes.container.AppInfoProvider
 import com.shashluchok.medianotes.data.MediaNote
@@ -25,13 +24,11 @@ import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteI
 import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesAction
 import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesState
 import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotesState.SelectionState.SelectionOption
-import com.shashluchok.medianotes.presentation.screen.medianotes.data.toMediaNoteItem
 import com.shashluchok.medianotes.presentation.utils.addOrRemove
 import com.shashluchok.medianotes.presentation.utils.copyModified
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.collections.immutable.toImmutableSet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -60,7 +57,6 @@ internal class MediaNotesViewModel(
 ) : AbsViewModel<MediaNotesState>() {
 
     private val recorder = AudioRecorderImpl()
-    private val decoder = Mpg123Decoder()
 
     private var timerJob: Job? = null
     private var voiceClicks = 0
@@ -72,13 +68,8 @@ internal class MediaNotesViewModel(
         )
     )
 
-    init {
-        subscribeToMediaNotes()
-    }
-
     override fun onCleared() {
         timerJob?.cancel()
-        decoder.close()
         recorder.destroy()
         super.onCleared()
     }
@@ -166,23 +157,6 @@ internal class MediaNotesViewModel(
             MediaNotesAction.OnVoiceDragCancel -> onStopRecording(save = false)
             MediaNotesAction.OnVoiceDragEnd -> onStopRecording(save = true)
             is MediaNotesAction.OnVoiceLongClick -> onStartRecording(context = action.context)
-        }
-    }
-
-    private fun subscribeToMediaNotes() {
-        viewModelScope.launch {
-            getMediaNotesInteractor.mediaNotesFlow.collect { notes ->
-                mutableStateFlow.update {
-                    it.copy(
-                        notes = notes
-                            .sortedBy { it.createdAt }
-                            .map {
-                                it.toMediaNoteItem(decoder = decoder, resources = resources)
-                            }
-                            .toImmutableList()
-                    )
-                }
-            }
         }
     }
 

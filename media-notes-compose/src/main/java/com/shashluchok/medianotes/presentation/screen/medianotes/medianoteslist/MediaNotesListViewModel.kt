@@ -1,5 +1,6 @@
 package com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist
 
+import android.content.res.Resources
 import androidx.lifecycle.viewModelScope
 import com.shashluchok.audiorecorder.audio.AudioPlayer
 import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.COMPLETED
@@ -10,9 +11,15 @@ import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.RELEASED
 import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.SEEKING
 import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.STOPPED
 import com.shashluchok.audiorecorder.audio.FileDataSource
+import com.shashluchok.audiorecorder.audio.codec.mpg123.Mpg123Decoder
+import com.shashluchok.medianotes.domain.notes.get.GetMediaNotesInteractor
 import com.shashluchok.medianotes.presentation.screen.AbsViewModel
 import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
+import com.shashluchok.medianotes.presentation.screen.medianotes.data.toMediaNoteItem
 import com.shashluchok.medianotes.presentation.utils.toAudioDisplayString
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -21,6 +28,8 @@ import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
 internal class MediaNotesListViewModel(
+    private val getMediaNotesInteractor: GetMediaNotesInteractor,
+    private val resources: Resources,
     private val player: AudioPlayer
 ) : AbsViewModel<MediaNotesListViewModel.State>() {
 
@@ -32,12 +41,17 @@ internal class MediaNotesListViewModel(
     )
 
     data class State(
+        val notes: ImmutableList<MediaNoteItem> = persistentListOf(),
         val playingVoiceInfo: PlayVoiceInfo? = null
     )
 
     override val mutableStateFlow: MutableStateFlow<State> = MutableStateFlow(State())
 
+    private val decoder = Mpg123Decoder()
+
     init {
+        subscribeToMediaNotes()
+
         viewModelScope.launch {
             player.playInfoState.collect { info ->
                 info?.let {
@@ -123,8 +137,30 @@ internal class MediaNotesListViewModel(
     }
 
     override fun onCleared() {
-        player.destroy()
+        decoder.close()
         super.onCleared()
+    }
+
+    private fun subscribeToMediaNotes() {
+        viewModelScope.launch {
+            getMediaNotesInteractor.mediaNotesFlow.collect { notes ->
+                state.playingVoiceInfo?.mediaNote?.let { playingNote ->
+                    if (notes.filter { it.id == playingNote.id }.isEmpty()) {
+                        player.stop()
+                    }
+                }
+                mutableStateFlow.update {
+                    it.copy(
+                        notes = notes
+                            .sortedBy { it.createdAt }
+                            .map {
+                                it.toMediaNoteItem(decoder = decoder, resources = resources)
+                            }
+                            .toImmutableList()
+                    )
+                }
+            }
+        }
     }
 
     private fun onSeekStart(mediaNote: MediaNoteItem.Voice, progress: Float) {

@@ -73,7 +73,6 @@ private val dateHeaderShape = RoundedCornerShape(12.dp)
 @Composable
 internal fun MediaNotesList(
     listState: LazyListState,
-    notes: ImmutableList<MediaNoteItem>,
     selectedNotes: ImmutableList<MediaNoteItem>,
     editingNote: MediaNoteItem?,
     onSelect: (MediaNoteItem) -> Unit,
@@ -87,7 +86,7 @@ internal fun MediaNotesList(
 
     val density = LocalDensity.current
 
-    var previousNotesSize by remember { mutableIntStateOf(notes.size) }
+    var previousNotesSize by remember { mutableIntStateOf(state.notes.size) }
 
     val notVisibleBottomItemsSize by remember {
         derivedStateOf {
@@ -101,8 +100,8 @@ internal fun MediaNotesList(
         }
     }
 
-    LaunchedEffect(notes) {
-        if (notes.size > previousNotesSize) {
+    LaunchedEffect(state.notes) {
+        if (state.notes.size > previousNotesSize) {
             with(density) {
                 listState.animateScrollBy(
                     value = notVisibleBottomItemsSize * scrollValuePerListItem.toPx(),
@@ -113,7 +112,7 @@ internal fun MediaNotesList(
                 )
             }
         }
-        previousNotesSize = notes.size
+        previousNotesSize = state.notes.size
     }
 
     DisposableEffect(lifecycleOwner) {
@@ -131,11 +130,11 @@ internal fun MediaNotesList(
 
     AnimatedWavesContainer(
         modifier = modifier,
-        wavesVisible = notes.isEmpty()
+        wavesVisible = state.notes.isEmpty()
     ) {
         MediaNotesList(
             modifier = Modifier.fillMaxSize(),
-            mediaNotes = notes,
+            mediaNotes = state.notes,
             selectedNotes = selectedNotes,
             onSelect = onSelect,
             lazyListState = listState,

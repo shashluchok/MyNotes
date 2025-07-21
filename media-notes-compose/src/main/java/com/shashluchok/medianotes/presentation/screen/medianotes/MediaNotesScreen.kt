@@ -89,7 +89,6 @@ import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNotes
 import com.shashluchok.medianotes.presentation.screen.medianotes.galleryimagepicker.ImagePickerSheetContent
 import com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist.MediaNotesList
 import com.shashluchok.medianotes.presentation.screen.medianotes.mediatoolbar.MediaToolbar
-import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentSetOf
@@ -252,7 +251,6 @@ private fun MediaNotesScreen(
                 },
                 onSketchClick = onSketchClick,
                 topBarTitle = state.topBarTitle,
-                notes = state.notes,
                 selectionState = state.selectionState,
                 onOpenImage = onOpenImage,
                 isEditingMediaNote = state.isEditingMediaNote,
@@ -298,7 +296,6 @@ private fun Content(
     onCameraClick: () -> Unit,
     topBarTitle: String,
     selectionState: MediaNotesState.SelectionState?,
-    notes: ImmutableList<MediaNoteItem>,
     onOpenImage: (MediaImage) -> Unit,
     isEditingMediaNote: Boolean,
     editingMediaNote: MediaNoteItem?,
@@ -376,7 +373,6 @@ private fun Content(
             onSelect = {
                 onAction(MediaNotesAction.OnSelectMediaNote(it))
             },
-            notes = notes,
             selectedNotes = selectionState?.notes ?: persistentListOf(),
             onOpenImage = onOpenImage,
             editingNote = editingMediaNote

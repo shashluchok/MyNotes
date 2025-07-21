@@ -11,7 +11,6 @@ internal data class MediaNotesState(
     val topBarTitle: String,
     val toolbarText: String = "",
     val editingMediaNote: MediaNoteItem? = null,
-    val notes: ImmutableList<MediaNoteItem> = persistentListOf(),
     // Nested states
     val selectionState: SelectionState? = null,
     val recordingState: RecordingState? = null,
