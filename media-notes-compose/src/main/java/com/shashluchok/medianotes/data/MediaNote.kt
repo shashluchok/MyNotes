@@ -12,24 +12,28 @@ sealed interface MediaNote {
         val text: String
     }
 
+    sealed interface WithFile : MediaNote {
+        val path: String
+    }
+
     data class Voice(
         override val id: String = UUID.randomUUID().toString(),
         override val createdAt: Instant = Clock.System.now(),
-        val path: String
-    ) : MediaNote
+        override val path: String
+    ) : WithFile
 
     data class Image(
         override val id: String = UUID.randomUUID().toString(),
         override val createdAt: Instant = Clock.System.now(),
         override val text: String = "",
-        val path: String
-    ) : WithText
+        override val path: String
+    ) : WithText, WithFile
 
     data class Sketch(
         override val id: String = UUID.randomUUID().toString(),
         override val createdAt: Instant = Clock.System.now(),
-        val path: String
-    ) : MediaNote
+        override val path: String
+    ) : WithFile
 
     data class Text(
         override val id: String = UUID.randomUUID().toString(),

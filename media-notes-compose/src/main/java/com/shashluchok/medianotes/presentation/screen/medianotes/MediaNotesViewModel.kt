@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Resources
 import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.viewModelScope
+import com.shashluchok.audiorecorder.audio.AudioPlayer
 import com.shashluchok.audiorecorder.audio.AudioRecorderImpl
 import com.shashluchok.audiorecorder.audio.FileDataSource
 import com.shashluchok.audiorecorder.audio.codec.mpg123.Mpg123Decoder
@@ -54,6 +55,7 @@ internal class MediaNotesViewModel(
     private val deleteMediaNote: DeleteMediaNotesInteractor,
     private val createMediaNote: CreateMediaNoteInteractor,
     private val updateMediaNote: UpdateMediaNoteInteractor,
+    private val player: AudioPlayer,
     private val resources: Resources
 ) : AbsViewModel<MediaNotesState>() {
 
@@ -335,6 +337,7 @@ internal class MediaNotesViewModel(
 
     private fun onStartRecording(context: Context) {
         viewModelScope.launch(Dispatchers.IO) {
+            player.pause()
             file = createAudioFile(context)
             recorder.record(
                 dataSource = FileDataSource(file ?: return@launch),

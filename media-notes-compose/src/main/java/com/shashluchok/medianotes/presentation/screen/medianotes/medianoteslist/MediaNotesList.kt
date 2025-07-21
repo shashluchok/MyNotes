@@ -50,6 +50,7 @@ import com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist.
 import com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist.items.VoiceItem
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 private val scrollbarPadding = PaddingValues(end = 8.dp)
 
@@ -78,7 +79,7 @@ internal fun MediaNotesList(
     onSelect: (MediaNoteItem) -> Unit,
     onOpenImage: (MediaImage) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: MediaNotesListViewModel = viewModel()
+    viewModel: MediaNotesListViewModel = koinViewModel()
 ) {
     val state = viewModel.stateFlow.collectAsState().value
 

@@ -1,6 +1,7 @@
 package com.shashluchok.medianotes.presentation.screen.medianotes.medianoteslist
 
 import androidx.lifecycle.viewModelScope
+import com.shashluchok.audiorecorder.audio.AudioPlayer
 import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.COMPLETED
 import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.INITIALIZED
 import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.PAUSED
@@ -8,7 +9,6 @@ import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.PLAYING
 import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.RELEASED
 import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.SEEKING
 import com.shashluchok.audiorecorder.audio.AudioPlayer.PlayerState.STOPPED
-import com.shashluchok.audiorecorder.audio.AudioPlayerImpl
 import com.shashluchok.audiorecorder.audio.FileDataSource
 import com.shashluchok.medianotes.presentation.screen.AbsViewModel
 import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem
@@ -20,7 +20,9 @@ import java.io.File
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-internal class MediaNotesListViewModel : AbsViewModel<MediaNotesListViewModel.State>() {
+internal class MediaNotesListViewModel(
+    private val player: AudioPlayer
+) : AbsViewModel<MediaNotesListViewModel.State>() {
 
     data class PlayVoiceInfo(
         val mediaNote: MediaNoteItem.Voice,
@@ -31,10 +33,6 @@ internal class MediaNotesListViewModel : AbsViewModel<MediaNotesListViewModel.St
 
     data class State(
         val playingVoiceInfo: PlayVoiceInfo? = null
-    )
-
-    private val player = AudioPlayerImpl(
-        scope = viewModelScope
     )
 
     override val mutableStateFlow: MutableStateFlow<State> = MutableStateFlow(State())
