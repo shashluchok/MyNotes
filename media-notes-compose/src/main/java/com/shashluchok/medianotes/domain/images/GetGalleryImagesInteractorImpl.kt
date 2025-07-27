@@ -2,7 +2,7 @@ package com.shashluchok.medianotes.domain.images
 
 import android.content.Context
 import android.provider.MediaStore
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toPersistentList
 

@@ -38,8 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import com.shashluchok.medianotes.presentation.modifiers.scrollbars.ScrollbarConfig
 import com.shashluchok.medianotes.presentation.modifiers.scrollbars.scrollbar
 import com.shashluchok.medianotes.presentation.screen.medianotes.data.MediaNoteItem

@@ -63,7 +63,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import com.shashluchok.medianotes.presentation.SharedTransitionUtils
 import com.shashluchok.medianotes.presentation.components.CustomRippleColor
 import com.shashluchok.medianotes.presentation.components.LocalNavAnimatedVisibilityScope

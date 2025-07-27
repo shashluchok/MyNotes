@@ -13,7 +13,7 @@ import com.shashluchok.medianotes.domain.images.GetGalleryImagesInteractor
 import com.shashluchok.medianotes.domain.notes.create.CreateMediaNoteInteractor
 import com.shashluchok.medianotes.domain.notes.delete.DeleteMediaNotesInteractor
 import com.shashluchok.medianotes.domain.notes.get.GetMediaNotesInteractor
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import com.shashluchok.medianotes.presentation.components.cropper.cropper.crop.CropAgent
 import com.shashluchok.medianotes.presentation.components.cropper.cropper.model.CropData
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
@@ -25,9 +25,6 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.filterIsInstance
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration

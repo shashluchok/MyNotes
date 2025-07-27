@@ -76,7 +76,7 @@ import coil3.request.maxBitmapSize
 import coil3.size.Size
 import coil3.toBitmap
 import com.shashluchok.medianotes.R
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import com.shashluchok.medianotes.presentation.SharedTransitionUtils
 import com.shashluchok.medianotes.presentation.components.AnimatedVisibilityOnDisplay
 import com.shashluchok.medianotes.presentation.components.LocalIsCompact

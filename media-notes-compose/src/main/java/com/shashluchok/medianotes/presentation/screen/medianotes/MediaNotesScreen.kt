@@ -70,7 +70,7 @@ import androidx.compose.ui.zIndex
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.shashluchok.medianotes.presentation.CAMERA_AND_IMAGES
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import com.shashluchok.medianotes.presentation.components.counter.Counter
 import com.shashluchok.medianotes.presentation.components.dialog.MediaAlertDialog
 import com.shashluchok.medianotes.presentation.components.mediaicon.MediaIconButton

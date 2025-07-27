@@ -1,4 +1,4 @@
-package com.shashluchok.medianotes.presentation
+package com.shashluchok.medianotes.presentation.data
 
 import kotlinx.serialization.Serializable
 

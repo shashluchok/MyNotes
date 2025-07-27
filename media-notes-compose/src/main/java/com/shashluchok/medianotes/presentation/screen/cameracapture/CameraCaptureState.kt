@@ -1,6 +1,6 @@
 package com.shashluchok.medianotes.presentation.screen.cameracapture
 
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import com.shashluchok.medianotes.presentation.components.snackbar.SnackbarData
 
 internal data class CameraCaptureState(

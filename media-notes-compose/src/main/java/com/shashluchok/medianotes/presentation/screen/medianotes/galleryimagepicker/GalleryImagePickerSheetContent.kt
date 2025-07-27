@@ -60,7 +60,7 @@ import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.shashluchok.medianotes.R
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import com.shashluchok.medianotes.presentation.SharedTransitionUtils.SharedElementType
 import com.shashluchok.medianotes.presentation.SharedTransitionUtils.getKeyByElementType
 import com.shashluchok.medianotes.presentation.components.AnimatedVisibilityOnDisplay

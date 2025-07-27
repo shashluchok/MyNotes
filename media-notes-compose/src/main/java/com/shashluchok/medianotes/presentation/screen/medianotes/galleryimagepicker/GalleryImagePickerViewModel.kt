@@ -3,7 +3,7 @@ package com.shashluchok.medianotes.presentation.screen.medianotes.galleryimagepi
 import android.content.Context
 import androidx.lifecycle.viewModelScope
 import com.shashluchok.medianotes.domain.images.GetGalleryImagesInteractor
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import com.shashluchok.medianotes.presentation.screen.AbsViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf

@@ -14,7 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import com.shashluchok.medianotes.presentation.components.LocalNavAnimatedVisibilityScope
 import com.shashluchok.medianotes.presentation.components.LocalSharedTransitionScope
 import com.shashluchok.medianotes.presentation.screen.cameracapture.CameraCaptureScreen

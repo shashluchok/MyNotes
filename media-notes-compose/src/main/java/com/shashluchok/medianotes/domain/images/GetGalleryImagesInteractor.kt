@@ -1,7 +1,7 @@
 package com.shashluchok.medianotes.domain.images
 
 import android.content.Context
-import com.shashluchok.medianotes.presentation.MediaImage
+import com.shashluchok.medianotes.presentation.data.MediaImage
 import kotlinx.collections.immutable.ImmutableList
 
 internal fun interface GetGalleryImagesInteractor {
